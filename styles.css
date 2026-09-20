@@ -1157,3 +1157,126 @@ body{font-family:Inter,Segoe UI,Arial,sans-serif}
     display:flex!important;
   }
 }
+
+
+/* FinCore v2.2 — First-run tutorial */
+.onboarding-screen{
+  position:fixed;
+  inset:0;
+  z-index:500;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
+  background:#ffffff;
+}
+.onboarding-screen.hidden{display:none!important}
+.onboarding-card{
+  position:relative;
+  width:min(100%,480px);
+  text-align:center;
+  padding:34px 24px 28px;
+  background:#ffffff;
+}
+.tutorial-skip{
+  position:absolute;
+  top:0;
+  right:0;
+  border:0;
+  background:transparent;
+  color:#64748b;
+  font-size:14px;
+  font-weight:700;
+  padding:10px;
+}
+.tutorial-visual{
+  width:92px;
+  height:92px;
+  margin:10px auto 22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:24px;
+  background:#eef4ff;
+  color:#2563eb;
+  font-size:44px;
+  box-shadow:0 8px 24px rgba(37,99,235,.10);
+}
+.tutorial-step-label{
+  color:#2563eb;
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:8px;
+}
+.onboarding-card h1{
+  margin:0;
+  color:#111827;
+  font-size:30px;
+  letter-spacing:-.03em;
+}
+.onboarding-card p{
+  margin:12px auto 0;
+  max-width:390px;
+  color:#64748b;
+  font-size:16px;
+  line-height:1.5;
+}
+.tutorial-dots{
+  display:flex;
+  justify-content:center;
+  gap:7px;
+  margin:26px 0 20px;
+}
+.tutorial-dots span{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#dbe3ee;
+}
+.tutorial-dots span.active{
+  width:24px;
+  background:#2563eb;
+}
+.tutorial-actions{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:10px;
+}
+.tutorial-actions .btn:only-child,
+.tutorial-actions .btn.hidden + .btn{
+  grid-column:1/-1;
+}
+@media(max-width:700px){
+  .onboarding-screen{
+    align-items:stretch;
+    padding:0;
+  }
+  .onboarding-card{
+    width:100%;
+    max-width:none;
+    min-height:100dvh;
+    padding:calc(42px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .tutorial-skip{
+    top:calc(12px + env(safe-area-inset-top));
+    right:14px;
+  }
+  .tutorial-visual{
+    width:88px;
+    height:88px;
+    font-size:42px;
+  }
+  .onboarding-card h1{font-size:28px}
+  .onboarding-card p{font-size:16px}
+  .tutorial-actions{
+    margin-top:6px;
+  }
+  .tutorial-actions .btn{
+    min-height:50px;
+  }
+}
