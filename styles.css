@@ -833,3 +833,40 @@ tr:hover td{
     background:linear-gradient(180deg,rgba(255,255,255,0),#ffffff 30%)!important;
   }
 }
+
+
+/* FinCore v1.5.1 — Pure White Background */
+html,body{
+  background:#ffffff!important;
+  color:#1f2937!important;
+}
+body,.app-shell,.main-area,.view,.welcome-screen{
+  background:#ffffff!important;
+}
+.topbar,.sidebar,.card,.kpi-card,.summary-card,.simple-panel,.modal,.welcome-card{
+  background:#ffffff!important;
+}
+.summary-primary,
+.summary-card:nth-child(2),
+.summary-card:nth-child(3),
+.summary-card:nth-child(4),
+.summary-alert{
+  background:#ffffff!important;
+}
+.nav-item.active{
+  background:#f3f6fb!important;
+  color:#1d4ed8!important;
+}
+.search-wrap{
+  background:#ffffff!important;
+}
+.table-wrap,th,.report-box,.cal-day{
+  background:#ffffff!important;
+}
+@media(max-width:700px){
+  .sidebar.mobile-expanded,
+  .sidebar.mobile-expanded #mainNav .nav-item,
+  .modal-header{
+    background:#ffffff!important;
+  }
+}
