@@ -12,6 +12,7 @@
   const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   const state = { data:null, fileHandle:null, fileName:'Guardado local', dirty:false, calendarCursor:new Date(), currentView:'dashboard', reportFilters:{from:'',to:'',lenderId:'',loanId:'',type:'',status:''} };
+  let pendingExistingData=null;
 
 
   const LOCAL_DB='FinCoreLocalDB', LOCAL_STORE='state', LOCAL_KEY='primary-user';
@@ -704,7 +705,28 @@
     const map={'add-loan':()=>loanModal(),'edit-loan':()=>loanModal(id),'delete-loan':()=>deleteBy('loans',id,'préstamo'),'add-payment':paymentModal,'delete-payment':()=>deletePayment(id),'add-income':incomeModal,'delete-income':()=>deleteBy('incomes',id,'ingreso'),'add-commitment':commitmentModal,'delete-commitment':()=>deleteBy('commitments',id,'compromiso'),'add-lender':lenderModal,'delete-lender':()=>{if(state.data.loans.some(l=>l.lenderId===id)){toast('Este acreedor está asociado a préstamos.','error');return;}deleteBy('lenders',id,'acreedor');},'add-goal':goalModal,'delete-goal':()=>deleteBy('goals',id,'objetivo'),'cal-prev':()=>{state.calendarCursor=new Date(state.calendarCursor.getFullYear(),state.calendarCursor.getMonth()-1,1);renderCalendar();},'cal-next':()=>{state.calendarCursor=new Date(state.calendarCursor.getFullYear(),state.calendarCursor.getMonth()+1,1);renderCalendar();},'cal-today':()=>{state.calendarCursor=new Date();renderCalendar();},'report-loan':()=>{const l=state.data.loans.find(x=>x.id===id);state.reportFilters={from:'',to:'',lenderId:l?.lenderId||'',loanId:id,type:'',status:''};navigate('reports');},'report-lender':()=>{state.reportFilters={from:'',to:'',lenderId:id,loanId:'',type:'',status:''};navigate('reports');},'report-reset':()=>{state.reportFilters={from:'',to:'',lenderId:'',loanId:'',type:'',status:''};renderReports();},'copy-report':async()=>{try{await navigator.clipboard.writeText(reportText());toast('Resumen copiado.');}catch(e){toast('No se pudo copiar automáticamente.','error');}},'reset-local':async()=>{if(!confirm('¿Borrar todos los datos guardados en este dispositivo? Esta acción no se puede deshacer.'))return;if(!confirm('Confirmación final: ¿eliminar completamente FinCore y comenzar desde cero?'))return;await clearLocalData();state.data=null;state.dirty=false;location.reload();}}; map[a]?.();
   });
 
-  $('#newUserBtn').onclick=newUserModal; $('#modalClose').onclick=closeModal; $('#modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop'){e.preventDefault();e.stopPropagation();}});
+  $('#newUserBtn').onclick=async()=>{
+    if(pendingExistingData){
+      if(!confirm('Ya hay un usuario guardado en este dispositivo. Crear uno nuevo reemplazará esos datos. ¿Continuar?'))return;
+      await clearLocalData();
+      pendingExistingData=null;
+    }
+    newUserModal();
+  };
+  const existingUserBtn=$('#existingUserBtn');
+  if(existingUserBtn)existingUserBtn.onclick=()=>{
+    if(!pendingExistingData)return;
+    try{
+      state.data=validateData(pendingExistingData);
+      state.fileName='Guardado local';
+      state.dirty=false;
+      pendingExistingData=null;
+      enterApp();
+    }catch(e){
+      toast('No se pudo abrir el usuario guardado.','error');
+    }
+  };
+  $('#modalClose').onclick=closeModal; $('#modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop'){e.preventDefault();e.stopPropagation();}});
   const mobileMoreBtn=$('#mobileMoreBtn'), mobileMenuTopBtn=$('#mobileMenuTopBtn'), mobileMenuCloseBtn=$('#mobileMenuCloseBtn'), mobileMenuScrim=$('#mobileMenuScrim'), mobileSidebar=document.querySelector('.sidebar');
   const setMobileMenu=(open)=>{if(!mobileSidebar||!mobileMoreBtn)return;mobileSidebar.classList.toggle('mobile-expanded',open);document.body.classList.toggle('mobile-menu-open',open);if(mobileMenuScrim){mobileMenuScrim.classList.toggle('show',open);mobileMenuScrim.setAttribute('aria-hidden',open?'false':'true');}const s=mobileMoreBtn.querySelector('span');if(s)s.textContent=open?'Cerrar':'Más';mobileMoreBtn.setAttribute('aria-label',open?'Cerrar menú':'Abrir más opciones');if(mobileMenuTopBtn){mobileMenuTopBtn.classList.toggle('menu-open',open);mobileMenuTopBtn.setAttribute('aria-label',open?'Cerrar menú':'Abrir menú');}};
   if(mobileMoreBtn)mobileMoreBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded'))); if(mobileMenuTopBtn)mobileMenuTopBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded'))); if(mobileMenuCloseBtn)mobileMenuCloseBtn.addEventListener('click',()=>setMobileMenu(false)); if(mobileMenuScrim)mobileMenuScrim.addEventListener('click',()=>setMobileMenu(false)); document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mobileSidebar?.classList.contains('mobile-expanded'))setMobileMenu(false);});
@@ -713,15 +735,18 @@
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&state.data)persistLocalData();});
   async function initializeFinCoreLocal(){
     const standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
-    const newUserBtn=$('#newUserBtn'), installBtn=$('#installPwaBtn');
+    const newUserBtn=$('#newUserBtn'), existingBtn=$('#existingUserBtn'), installBtn=$('#installPwaBtn');
     const subtitle=$('#welcomeSubtitle'), copy=$('#welcomeCopy'), note=$('#welcomeNote');
 
+    state.data=null;
+    state.dirty=false;
+    $('#appShell').classList.add('hidden');
+    $('#welcomeScreen').classList.remove('hidden');
+
     if(!standalone){
-      state.data=null;
-      state.dirty=false;
-      $('#appShell').classList.add('hidden');
-      $('#welcomeScreen').classList.remove('hidden');
+      pendingExistingData=null;
       if(newUserBtn)newUserBtn.classList.add('hidden');
+      if(existingBtn)existingBtn.classList.add('hidden');
       if(installBtn)installBtn.classList.remove('hidden');
       if(subtitle)subtitle.textContent='Instala FinCore para comenzar';
       if(copy)copy.textContent='FinCore no abrirá ni leerá tus datos personales desde esta página del navegador. Instala la app y ábrela desde tu pantalla de inicio.';
@@ -731,22 +756,26 @@
 
     if(installBtn)installBtn.classList.add('hidden');
     const saved=await loadLocalData();
+    pendingExistingData=saved||null;
+
     if(saved){
-      try{
-        state.data=validateData(saved);
-        state.fileName='Guardado local';
-        state.dirty=false;
-        enterApp();
-        return;
-      }catch(e){
-        await clearLocalData();
-        toast('Los datos locales estaban dañados y se reiniciaron.','error');
-      }
+      if(existingBtn)existingBtn.classList.remove('hidden');
+      if(newUserBtn)newUserBtn.classList.remove('hidden');
+      if(subtitle)subtitle.textContent='¿Cómo quieres entrar?';
+      if(copy)copy.textContent='Puedes usar el usuario guardado en este dispositivo o crear uno nuevo.';
+      if(note)note.textContent='Tus datos no se abrirán hasta que elijas “Usar usuario existente”';
+      return;
     }
 
-    if(newUserBtn)newUserBtn.classList.remove('hidden');
-    if(subtitle)subtitle.textContent='Configura tu FinCore';
-    if(copy)copy.textContent='Esta es la primera vez que abres la app. Crea tu usuario para comenzar.';
+    if(existingBtn)existingBtn.classList.add('hidden');
+    if(newUserBtn){
+      newUserBtn.classList.remove('hidden');
+      newUserBtn.textContent='Crear mi usuario';
+      newUserBtn.classList.remove('btn-secondary');
+      newUserBtn.classList.add('btn-primary');
+    }
+    if(subtitle)subtitle.textContent='Bienvenido a FinCore';
+    if(copy)copy.textContent='No hay un usuario guardado en este dispositivo. Crea uno para comenzar.';
     if(note)note.textContent='Usuario único • Guardado automático • Datos locales';
   }
   initializeFinCoreLocal();
