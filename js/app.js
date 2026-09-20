@@ -206,19 +206,55 @@
   function nextFortnightRange(date){ const d=new Date(date.getFullYear(),date.getMonth(),date.getDate()); const first=num(state.data.settings.firstFortnightDay)||15; let end;if(d.getDate()<=first)end=new Date(d.getFullYear(),d.getMonth(),first);else end=new Date(d.getFullYear(),d.getMonth(),lastDay(d.getFullYear(),d.getMonth()));return {start:d,end}; }
 
   function renderDashboard(){
-    const m=computeMetrics(); const goals=state.data.goals.slice(0,3); const upcoming=eventsForRange(new Date(),new Date(Date.now()+45*864e5)).filter(e=>['loan','commitment'].includes(e.type)).slice(0,8);
-    $('#view-dashboard').innerHTML=`${pageHeader(`Hola, ${state.data.profile.name.split(' ')[0]}`,'Aquí está el panorama de tu situación financiera.','<button class="btn btn-primary" data-action="add-payment">+ Registrar pago</button>')}
-      <div class="kpi-grid">
-        ${kpi('Deuda total',money(m.total),'Saldo registrado','◈')}${kpi('En mantenimiento',money(m.maint),`${m.total?Math.round(m.maint/m.total*100):0}% de la deuda`,'✓')}${kpi('Sin mantenimiento',money(m.off),'Registrada, no programada','Ⅱ')}${kpi('Próxima quincena',money(m.commitments),fmtDate(localISO(m.next.end)),'▦')}${kpi('Disponible estimado',money(m.available),`Ingresos: ${money(m.income)}`,'●')}
+    const m=computeMetrics();
+    const now=new Date();
+    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const monthEnd=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59);
+    const monthPayments=state.data.payments.filter(p=>{const d=new Date(p.date+'T12:00:00');return d>=monthStart&&d<=monthEnd;});
+    const paidMonth=monthPayments.reduce((s,p)=>s+num(p.amount),0);
+    const principalMonth=monthPayments.reduce((s,p)=>s+num(p.principal),0);
+    const interestMonth=monthPayments.reduce((s,p)=>s+num(p.interest),0);
+    const activeLoans=state.data.loans.filter(l=>num(l.currentBalance)>0);
+    const maintenanceCount=activeLoans.filter(l=>l.maintenance&&l.status!=='paused').length;
+    const noMaintenanceCount=activeLoans.filter(l=>!l.maintenance||l.status==='paused').length;
+    const upcoming=eventsForRange(new Date(),new Date(Date.now()+31*864e5)).filter(e=>['loan','commitment'].includes(e.type)).slice(0,6);
+
+    $('#view-dashboard').innerHTML=`${pageHeader(`Hola, ${state.data.profile.name.split(' ')[0]}`,'Tu resumen financiero, sin complicaciones.','<button class="btn btn-primary" data-action="add-payment">+ Registrar pago</button>')}
+      <div class="simple-summary-grid">
+        <div class="summary-card summary-primary"><span>Deuda total</span><strong>${money(m.total)}</strong><small>Saldo pendiente actual</small></div>
+        <div class="summary-card"><span>Próxima quincena</span><strong>${money(m.commitments)}</strong><small>Hasta ${fmtDate(localISO(m.next.end))}</small></div>
+        <div class="summary-card"><span>Ingresos próxima quincena</span><strong>${money(m.income)}</strong><small>Ingresos programados</small></div>
+        <div class="summary-card ${m.available<0?'summary-alert':''}"><span>Disponible estimado</span><strong>${money(m.available)}</strong><small>Después de compromisos</small></div>
       </div>
-      <div class="dashboard-grid">
-        <div class="card wide"><h3>Evolución de la deuda</h3><div class="chart-wrap"><canvas id="debtLine" class="chart-canvas"></canvas></div></div>
-        <div class="card"><h3>Distribución de la deuda</h3><div class="donut-wrap"><div class="chart-wrap small" style="width:58%"><canvas id="debtDonut" class="chart-canvas"></canvas></div><div id="debtLegend" class="legend"></div></div></div>
-        <div class="card wide"><h3>Próximos pagos y compromisos</h3>${upcoming.length?tableUpcoming(upcoming):empty('No hay pagos próximos','Programa préstamos o compromisos.')}</div>
-        <div class="card"><h3>Mis objetivos</h3>${goals.length?goals.map(goalCard).join(''):empty('Sin objetivos','Agrega metas financieras medibles.')}</div>
-        <div class="card"><h3>Estado de préstamos</h3><div class="chart-wrap small"><canvas id="statusDonut" class="chart-canvas"></canvas></div></div>
-        <div class="card wide"><h3>Ingresos vs. compromisos</h3><div class="chart-wrap small"><canvas id="cashBars" class="chart-canvas"></canvas></div></div>
-        <div class="card"><h3>Actividad reciente</h3>${state.data.audit.slice(0,6).map(a=>`<div class="metric-line"><span>${esc(a.action)}</span><small>${new Date(a.at).toLocaleDateString()}</small></div>`).join('')||'<div class="card-sub">Sin actividad todavía.</div>'}</div>
+
+      <div class="simple-dashboard-grid">
+        <div class="card simple-panel">
+          <div class="simple-panel-head"><div><h3>Próximos pagos</h3><p>Lo que viene en los próximos 31 días.</p></div></div>
+          ${upcoming.length?`<div class="upcoming-list">${upcoming.map(e=>`<div class="upcoming-row"><div><strong>${esc(e.name)}</strong><small>${fmtDate(e.date)} · ${e.type==='loan'?'Préstamo':'Compromiso'}</small></div><b>${money(e.amount)}</b></div>`).join('')}</div>`:empty('Nada pendiente','No tienes pagos programados en los próximos 31 días.')}
+        </div>
+
+        <div class="card simple-panel">
+          <div class="simple-panel-head"><div><h3>Este mes</h3><p>Pagos que ya registraste.</p></div></div>
+          <div class="simple-metrics">
+            <div><span>Total pagado</span><strong>${money(paidMonth)}</strong></div>
+            <div><span>A capital</span><strong>${money(principalMonth)}</strong></div>
+            <div><span>Intereses</span><strong>${money(interestMonth)}</strong></div>
+          </div>
+        </div>
+
+        <div class="card simple-panel simple-chart-panel">
+          <div class="simple-panel-head"><div><h3>Cómo va tu deuda</h3><p>Evolución de los últimos 6 meses.</p></div></div>
+          <div class="chart-wrap simple-chart"><canvas id="debtLine" class="chart-canvas"></canvas></div>
+        </div>
+
+        <div class="card simple-panel">
+          <div class="simple-panel-head"><div><h3>Préstamos</h3><p>Estado general de tus deudas.</p></div></div>
+          <div class="simple-metrics">
+            <div><span>Activos</span><strong>${activeLoans.length}</strong></div>
+            <div><span>En mantenimiento</span><strong>${maintenanceCount}</strong></div>
+            <div><span>Sin mantenimiento / pausados</span><strong>${noMaintenanceCount}</strong></div>
+          </div>
+        </div>
       </div>`;
     requestAnimationFrame(drawDashboardCharts);
   }
@@ -229,11 +265,11 @@
   function goalProgress(g){ if(g.type==='debt-total'){const cur=state.data.loans.reduce((s,l)=>s+num(l.currentBalance),0),base=num(g.startValue)||cur,target=num(g.targetValue); if(base<=target)return 100; return clamp(Math.round((base-cur)/(base-target)*100),0,100);} if(g.type==='loan'){const l=state.data.loans.find(x=>x.id===g.loanId); if(!l)return 0; return clamp(Math.round((1-num(l.currentBalance)/Math.max(1,num(l.initialAmount)))*100),0,100);} return clamp(num(g.progress),0,100); }
 
   function drawDashboardCharts(){
-    const months=lastTwelveMonths(); const balances=debtHistory(months); if($('#debtLine')) FinCharts.line($('#debtLine'),months.map(x=>x.label),balances);
-    const byType={}; state.data.loans.forEach(l=>byType[l.type||'Otro']=(byType[l.type||'Otro']||0)+num(l.currentBalance)); const colors=[FinCharts.colors.blue,FinCharts.colors.green,FinCharts.colors.orange,FinCharts.colors.red,FinCharts.colors.purple,'#5cc8ff']; const items=Object.entries(byType).map(([label,value],i)=>({label,value,color:colors[i%colors.length]})); if($('#debtDonut')) FinCharts.donut($('#debtDonut'),items,{center:money(items.reduce((s,i)=>s+i.value,0)).replace(/\s/g,''),sub:'Total'}); const total=items.reduce((s,i)=>s+i.value,0)||1; if($('#debtLegend')) $('#debtLegend').innerHTML=items.map(i=>`<div class="legend-item"><span class="legend-dot" style="background:${i.color}"></span>${esc(i.label)} <strong>${Math.round(i.value/total*100)}%</strong></div>`).join('')||'<span class="card-sub">Sin deuda</span>';
-    const sts=['En mantenimiento','Sin mantenimiento','Pausado','Liquidado'].map((s,i)=>({label:s,value:state.data.loans.filter(l=>loanStatus(l)===s).length,color:[FinCharts.colors.green,FinCharts.colors.red,FinCharts.colors.orange,'#70899a'][i]})); if($('#statusDonut')) FinCharts.donut($('#statusDonut'),sts,{center:String(state.data.loans.length),sub:'Préstamos'});
-    const y=new Date().getFullYear(); const f=forecastByQuarter(y); if($('#cashBars')) FinCharts.bars($('#cashBars'),['Q1','Q2','Q3','Q4'],f.income,f.outgo);
+    const months=lastTwelveMonths().slice(-6);
+    const balances=debtHistory(months);
+    if($('#debtLine')) FinCharts.line($('#debtLine'),months.map(x=>x.label),balances,{color:FinCharts.colors.blue});
   }
+
   function lastTwelveMonths(){ const out=[]; const d=new Date(); for(let i=11;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);out.push({y:x.getFullYear(),m:x.getMonth(),label:monthNames[x.getMonth()]});} return out; }
   function debtHistory(months){ const current=state.data.loans.reduce((s,l)=>s+num(l.currentBalance),0); return months.map(({y,m})=>{const end=new Date(y,m+1,0,23,59,59); const after=state.data.payments.filter(p=>new Date(p.date)>end).reduce((s,p)=>s+num(p.principal),0); return current+after; }); }
 
