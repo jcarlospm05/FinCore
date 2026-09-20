@@ -147,3 +147,24 @@ details summary{cursor:pointer;font-weight:700;color:#bfeaff}
 @media(max-width:420px){
   .sidebar.mobile-expanded #mainNav{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* FinCore v1.2.2 — botón de menú visible y panel móvil */
+.mobile-menu-top-btn{display:none}
+@media(max-width:900px){
+  .mobile-menu-top-btn{display:inline-flex;align-items:center;gap:6px}
+  .sidebar.mobile-expanded{
+    z-index:120;
+    left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));
+    max-height:76vh;
+  }
+  .sidebar.mobile-expanded:before{
+    content:"Menú FinCore";
+    display:block;
+    font-weight:800;
+    font-size:16px;
+    padding:4px 4px 10px;
+    color:#eaf8ff;
+    letter-spacing:.02em;
+  }
+}
