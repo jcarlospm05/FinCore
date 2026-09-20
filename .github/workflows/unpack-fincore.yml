@@ -1,0 +1,40 @@
+name: Deploy FinCore source from ZIP
+
+on:
+  push:
+    paths:
+      - "fincore-pwa.zip"
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unpack FinCore
+        shell: bash
+        run: |
+          set -e
+          rm -rf .fincore_unpack
+          mkdir .fincore_unpack
+          unzip -o fincore-pwa.zip -d .fincore_unpack
+          cp -a .fincore_unpack/FinCore_PWA_READY/. .
+          rm -rf .fincore_unpack
+          rm -f fincore-pwa.zip
+
+      - name: Commit extracted app
+        shell: bash
+        run: |
+          git config user.name "FinCore Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Deploy FinCore PWA v1.2"
+          git push
