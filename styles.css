@@ -1111,3 +1111,49 @@ body{font-family:Inter,Segoe UI,Arial,sans-serif}
     font-size:13px;
   }
 }
+
+
+/* FinCore v2.0.3 — mobile menu interaction */
+.mobile-menu-scrim{
+  display:none;
+}
+@media(max-width:700px){
+  .mobile-menu-scrim{
+    display:block;
+    position:fixed;
+    inset:0;
+    z-index:90;
+    background:rgba(15,23,42,.28);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .mobile-menu-scrim.show{
+    opacity:1;
+    pointer-events:auto;
+  }
+  .sidebar{
+    z-index:100!important;
+  }
+  body.mobile-menu-open{
+    overflow:hidden;
+  }
+
+  /* El mismo botón Más se convierte visualmente en Cerrar */
+  .mobile-menu-top-btn.menu-open:after{
+    content:"✕ Cerrar"!important;
+  }
+
+  /* El botón inferior también cambia de Más a Cerrar por JS */
+  .sidebar.mobile-expanded #mobileMoreBtn{
+    display:flex!important;
+    color:#b91c1c!important;
+    border-color:#fecaca!important;
+    background:#fff5f5!important;
+  }
+
+  /* El botón X sigue como respaldo visible */
+  .sidebar.mobile-expanded .mobile-menu-close-btn{
+    display:flex!important;
+  }
+}
