@@ -168,3 +168,176 @@ details summary{cursor:pointer;font-weight:700;color:#bfeaff}
     letter-spacing:.02em;
   }
 }
+
+
+/* FinCore v1.3.1 — mobile-first responsive redesign */
+@media(max-width:700px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  body{padding-top:env(safe-area-inset-top);font-size:14px}
+  .app-shell{
+    display:block;
+    width:100%;
+    min-width:0;
+    padding:6px 8px calc(82px + env(safe-area-inset-bottom));
+  }
+  .main-area{width:100%;min-width:0}
+  .view{padding:10px 0 0;width:100%;min-width:0}
+  .topbar{
+    position:sticky;top:4px;z-index:70;
+    display:grid;grid-template-columns:1fr;
+    gap:7px;width:100%;min-height:0;
+    padding:8px;border-radius:16px;
+  }
+  .topbar-right{
+    order:1;width:100%;max-width:none;
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+    align-items:center;gap:7px;overflow:visible;padding:0;
+  }
+  .topbar-left{order:2;width:100%;min-width:0}
+  .mobile-menu-top-btn{
+    display:inline-flex!important;align-items:center;justify-content:center;
+    min-height:38px;padding:8px 10px;font-size:13px;
+  }
+  .save-state{
+    min-width:0;padding:6px 8px;font-size:11px;text-align:center;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .user-chip{padding:0;min-width:0}
+  .user-chip .avatar{width:34px;height:34px;font-size:12px}
+  .user-chip>div:last-child{display:none}
+  .search-wrap{
+    width:100%;max-width:none;min-height:42px;
+    padding:8px 11px;border-radius:12px;
+  }
+  .search-wrap input{font-size:14px;min-width:0}
+  .page-header{
+    display:grid;grid-template-columns:1fr;gap:10px;
+    margin:8px 2px 12px;align-items:start;
+  }
+  .page-header h1{font-size:26px;line-height:1.08;margin:0}
+  .page-header p{font-size:14px;line-height:1.35;margin-top:6px}
+  .action-row{width:100%;display:grid;grid-template-columns:1fr;gap:7px}
+  .action-row .btn{width:100%;min-height:44px}
+  .kpi-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+  }
+  .kpi-grid .kpi-card:first-child{grid-column:1/-1}
+  .kpi-card{
+    min-width:0;padding:13px 12px;border-radius:15px;
+  }
+  .kpi-label{font-size:12px;line-height:1.2;padding-right:32px}
+  .kpi-value{font-size:22px;line-height:1.08;margin-top:7px;overflow-wrap:anywhere}
+  .kpi-sub{font-size:11px;line-height:1.25}
+  .kpi-accent{width:31px;height:31px;top:10px;right:10px;border-radius:9px}
+  .dashboard-grid,.two-col,.three-col,.report-chart-grid{
+    display:grid!important;grid-template-columns:1fr!important;gap:9px!important;margin-top:9px;
+  }
+  .dashboard-grid .wide{grid-column:auto!important}
+  .card{width:100%;min-width:0;padding:13px;border-radius:15px}
+  .card h3{font-size:15px;margin-bottom:9px}
+  .chart-wrap{height:185px!important}
+  .chart-wrap.small{height:165px!important}
+  .donut-wrap{min-height:175px;gap:8px}
+  .table-wrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{font-size:12px}
+  th,td{padding:9px 10px}
+  .report-filters{grid-template-columns:1fr!important;gap:8px}
+  .report-filter-head,.report-section-title{display:grid;gap:8px;align-items:start}
+  .form-grid{grid-template-columns:1fr!important;gap:10px}
+  .field.full{grid-column:auto}
+  .field input,.field select,.field textarea{font-size:16px;min-height:44px}
+  .field textarea{min-height:92px}
+  .modal-backdrop{
+    align-items:end;justify-items:stretch;
+    padding:0;background:rgba(0,4,10,.78);
+  }
+  .modal{
+    width:100%;max-width:none;max-height:92dvh;
+    border-radius:22px 22px 0 0;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .modal-header{
+    position:sticky;top:0;z-index:2;
+    padding:14px 16px;background:rgba(5,27,46,.98);
+  }
+  .modal-header h2{font-size:19px}
+  .modal-body{padding:14px 14px 18px}
+  .form-actions{
+    position:sticky;bottom:0;z-index:2;
+    display:grid;grid-template-columns:1fr 1fr;gap:8px;
+    padding:10px 0 0;margin-top:14px;
+    background:linear-gradient(180deg,rgba(4,22,39,0),rgba(4,22,39,.98) 24%);
+  }
+  .form-actions .btn{min-height:44px}
+  .calendar{
+    min-width:0!important;width:100%;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:3px;
+  }
+  #view-calendar .card{overflow:visible;padding:9px}
+  .calendar .dow{font-size:9px;padding:4px 0}
+  .cal-day{min-width:0;min-height:58px;padding:4px;border-radius:8px}
+  .cal-num{font-size:10px}
+  .cal-event{
+    font-size:8px;line-height:1.1;padding:3px;margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .sidebar{
+    position:fixed;left:6px;right:6px;
+    bottom:calc(6px + env(safe-area-inset-bottom));
+    top:auto;height:64px;z-index:100;
+    padding:5px 6px;border-radius:18px;overflow:hidden;
+  }
+  #mainNav{
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:2px;width:100%;height:100%;overflow:visible!important;
+  }
+  #mainNav .nav-item{
+    display:none;min-width:0!important;width:100%;
+    min-height:52px;padding:6px 2px!important;
+    border-radius:11px;font-size:9.5px!important;
+    line-height:1.05;justify-content:center;align-items:center;
+    flex-direction:column;gap:3px;
+  }
+  #mainNav .nav-item[data-view="dashboard"],
+  #mainNav .nav-item[data-view="loans"],
+  #mainNav .nav-item[data-view="payments"],
+  #mainNav .nav-item[data-view="calendar"],
+  #mainNav .mobile-more-btn{display:flex}
+  .sidebar.mobile-expanded{
+    left:0;right:0;bottom:0;height:auto;max-height:82dvh;
+    padding:14px 12px calc(14px + env(safe-area-inset-bottom));
+    border-radius:24px 24px 0 0;
+    overflow:auto;
+    background:linear-gradient(180deg,rgba(6,31,52,.995),rgba(2,14,26,.998));
+    box-shadow:0 -12px 55px rgba(0,0,0,.65);
+  }
+  .sidebar.mobile-expanded:before{
+    content:"Menú FinCore";
+    display:block;font-size:18px;font-weight:800;
+    padding:2px 4px 12px;color:#eef9ff;
+  }
+  .sidebar.mobile-expanded #mainNav{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    height:auto;gap:8px;
+  }
+  .sidebar.mobile-expanded #mainNav .nav-item{
+    display:flex!important;min-height:64px!important;
+    font-size:11px!important;
+    border:1px solid rgba(65,190,255,.12);
+    background:rgba(8,37,61,.72);
+  }
+  .welcome-screen{padding:12px}
+  .welcome-card{width:100%;padding:22px 16px;border-radius:22px}
+  .welcome-logo{width:112px;height:112px}
+  .welcome-card h1{font-size:36px}
+  .welcome-copy{font-size:14px;line-height:1.45}
+}
+@media(max-width:390px){
+  .kpi-value{font-size:20px}
+  .kpi-card{padding:12px 10px}
+  .page-header h1{font-size:24px}
+  .sidebar.mobile-expanded #mainNav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
