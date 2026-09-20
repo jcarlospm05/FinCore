@@ -3,7 +3,9 @@ name: Deploy FinCore source from ZIP
 on:
   push:
     paths:
-      - "fincore-pwa.zip"
+      - "FinCore_v1.2_PWA_Android.zip"
+      - ".github/workflows/unpack-fincore.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,10 +23,18 @@ jobs:
           set -e
           rm -rf .fincore_unpack
           mkdir .fincore_unpack
-          unzip -o fincore-pwa.zip -d .fincore_unpack
-          cp -a .fincore_unpack/FinCore_PWA_READY/. .
+          unzip -o FinCore_v1.2_PWA_Android.zip -d .fincore_unpack
+          if [ -d ".fincore_unpack/FinCore_PWA_READY" ]; then
+            cp -a .fincore_unpack/FinCore_PWA_READY/. .
+          else
+            first_dir="$(find .fincore_unpack -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+            if [ -n "$first_dir" ]; then
+              cp -a "$first_dir"/. .
+            else
+              cp -a .fincore_unpack/. .
+            fi
+          fi
           rm -rf .fincore_unpack
-          rm -f fincore-pwa.zip
 
       - name: Commit extracted app
         shell: bash
