@@ -10,8 +10,8 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
-  "background_color": "#03111f",
-  "theme_color": "#03111f",
+  "background_color":"#f5f7fb",
+  "theme_color":"#ffffff",
   "categories": ["finance", "productivity", "utilities"],
   "icons": [
     {
