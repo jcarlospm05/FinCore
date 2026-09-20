@@ -1,12 +1,15 @@
-# FinCore
+# FinCore 2.0
 
-PWA de finanzas personales para controlar deudas, acreedores, pagos, ingresos, compromisos, calendario y proyecciones mediante archivos JSON privados.
+PWA de finanzas personales pensada para llevar deudas y quincenas de forma sencilla.
 
-## Ejecutar
-Abre `index.html` localmente o publica la rama `main` con GitHub Pages.
+## Idea de FinCore 2.0
+La app se centra en cuatro preguntas: **a quién debo, cuánto debo, cuánto voy pagando y cuándo pago**.
 
-## PWA
-Incluye `manifest.webmanifest`, Service Worker e iconos para instalación en Android.
+- Usuario único
+- Guardado automático en el dispositivo
+- Deudas y pagos en lenguaje simple
+- Vista de quincena
+- Intereses y datos técnicos dentro de opciones avanzadas
+- Sin servidor ni base de datos externa para los datos personales
 
-## Datos
-Los datos personales no forman parte del repositorio. Cada usuario crea o abre su propio archivo JSON.
+La versión anterior quedó preservada en la rama `archive/v1.5.1`.
