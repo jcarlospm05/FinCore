@@ -9,11 +9,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="FinCore" />
-  <title>FinCore v1.2.2 — Tu control financiero</title>
+  <title>FinCore v1.3 — Tu control financiero</title>
   <link rel="icon" href="assets/fincore-logo.png" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="manifest" href="manifest.webmanifest?v=1.2.2" />
-  <link rel="stylesheet" href="styles.css?v=1.2.2" />
+  <link rel="manifest" href="manifest.webmanifest?v=1.3" />
+  <link rel="stylesheet" href="styles.css?v=1.3" />
 </head>
 <body>
   <div class="bg-grid"></div>
@@ -25,14 +25,12 @@
       <img src="assets/fincore-logo.png" class="welcome-logo" alt="FinCore" />
       <h1>FinCore</h1>
       <p class="welcome-subtitle">Tu control financiero</p>
-      <p class="welcome-copy">Administra deudas, préstamos, pagos, ingresos, compromisos y proyecciones desde un archivo JSON privado.</p>
+      <p class="welcome-copy">Administra deudas, préstamos, pagos, ingresos, compromisos y proyecciones. FinCore guarda automáticamente tus datos en este dispositivo.</p>
       <div class="welcome-actions">
-        <button id="newUserBtn" class="btn btn-primary btn-lg">+ Nuevo usuario</button>
-        <button id="openJsonBtn" class="btn btn-secondary btn-lg">Abrir JSON existente</button>
+        <button id="newUserBtn" class="btn btn-primary btn-lg">Configurar mi FinCore</button>
         <button id="installPwaBtn" class="btn btn-secondary btn-lg hidden">Instalar FinCore</button>
       </div>
-      <input id="jsonFileInput" type="file" accept="application/json,.json" hidden />
-      <div class="welcome-note">Sin base de datos • Sin servidor • Tus datos se mantienen en tu archivo</div>
+      <div class="welcome-note">Usuario único • Guardado automático • Datos almacenados localmente en este dispositivo</div>
     </div>
   </section>
 
@@ -67,12 +65,9 @@
         </div>
         <div class="topbar-right">
           <button id="mobileMenuTopBtn" class="btn btn-secondary mobile-menu-top-btn" type="button">☰ Menú</button>
-          <div id="saveState" class="save-state unsaved">● Cambios sin guardar</div>
-          <button id="saveBtn" class="btn btn-primary">Guardar JSON</button>
-          <button id="exportBtn" class="btn btn-secondary">Exportar copia</button>
+          <div id="saveState" class="save-state saved">✓ Guardado automáticamente</div>
           <button id="installPwaTopBtn" class="btn btn-secondary hidden">Instalar app</button>
-          <button id="closeUserBtn" class="btn btn-ghost">Cerrar</button>
-          <div class="user-chip"><div id="userInitials" class="avatar">FC</div><div><strong id="userNameLabel">Usuario</strong><small id="userFileLabel">Sin archivo</small></div></div>
+          <div class="user-chip"><div id="userInitials" class="avatar">FC</div><div><strong id="userNameLabel">Usuario</strong><small id="userFileLabel">Guardado local</small></div></div>
         </div>
       </header>
 
@@ -99,8 +94,8 @@
 
   <div id="toastContainer" class="toast-container"></div>
 
-  <script src="js/charts.js?v=1.2.2"></script>
-  <script src="js/app.js?v=1.2.2"></script>
-  <script src="js/pwa.js?v=1.2.2"></script>
+  <script src="js/charts.js?v=1.3"></script>
+  <script src="js/app.js?v=1.3"></script>
+  <script src="js/pwa.js?v=1.3"></script>
 </body>
 </html>
