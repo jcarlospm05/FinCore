@@ -11,12 +11,79 @@
   const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
   const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-  const state = { data:null, fileHandle:null, fileName:'', dirty:false, calendarCursor:new Date(), currentView:'dashboard', reportFilters:{from:'',to:'',lenderId:'',loanId:'',type:'',status:''} };
+  const state = { data:null, fileHandle:null, fileName:'Guardado local', dirty:false, calendarCursor:new Date(), currentView:'dashboard', reportFilters:{from:'',to:'',lenderId:'',loanId:'',type:'',status:''} };
+
+
+  const LOCAL_DB='FinCoreLocalDB', LOCAL_STORE='state', LOCAL_KEY='primary-user';
+  function openLocalDb(){
+    return new Promise((resolve,reject)=>{
+      if(!('indexedDB' in window)) return reject(new Error('IndexedDB no disponible'));
+      const req=indexedDB.open(LOCAL_DB,1);
+      req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(LOCAL_STORE))db.createObjectStore(LOCAL_STORE);};
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error);
+    });
+  }
+  async function loadLocalData(){
+    try{
+      const db=await openLocalDb();
+      const value=await new Promise((resolve,reject)=>{
+        const tx=db.transaction(LOCAL_STORE,'readonly');
+        const req=tx.objectStore(LOCAL_STORE).get(LOCAL_KEY);
+        req.onsuccess=()=>resolve(req.result||null);
+        req.onerror=()=>reject(req.error);
+      });
+      db.close();
+      return value;
+    }catch(e){
+      try{const raw=localStorage.getItem('fincore-local-fallback');return raw?JSON.parse(raw):null;}catch(_){return null;}
+    }
+  }
+  async function persistLocalData(){
+    if(!state.data)return;
+    state.data.updatedAt=nowISO();
+    try{
+      const snapshot=JSON.parse(JSON.stringify(state.data));
+      const db=await openLocalDb();
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(LOCAL_STORE,'readwrite');
+        tx.objectStore(LOCAL_STORE).put(snapshot,LOCAL_KEY);
+        tx.oncomplete=()=>resolve();
+        tx.onerror=()=>reject(tx.error);
+      });
+      db.close();
+      state.dirty=false;
+      renderSaveState();
+    }catch(e){
+      try{
+        localStorage.setItem('fincore-local-fallback',JSON.stringify(state.data));
+        state.dirty=false;
+        renderSaveState();
+      }catch(_){
+        state.dirty=true;
+        renderSaveState();
+        toast('No se pudo guardar en el dispositivo.','error');
+      }
+    }
+  }
+  async function clearLocalData(){
+    try{
+      const db=await openLocalDb();
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(LOCAL_STORE,'readwrite');
+        tx.objectStore(LOCAL_STORE).delete(LOCAL_KEY);
+        tx.oncomplete=()=>resolve();
+        tx.onerror=()=>reject(tx.error);
+      });
+      db.close();
+    }catch(e){}
+    try{localStorage.removeItem('fincore-local-fallback');}catch(e){}
+  }
 
   function defaultData(profile={}){
     const name = profile.name || 'Usuario';
     return {
-      app:'FinCore', schemaVersion:'1.2.0', createdAt:nowISO(), updatedAt:nowISO(),
+      app:'FinCore', schemaVersion:'1.3.0', createdAt:nowISO(), updatedAt:nowISO(),
       profile:{ id:uid('usr'), name, email:profile.email||'', notes:'' },
       settings:{ currency:profile.currency||'DOP', currencySymbol:profile.currencySymbol||'RD$', locale:profile.locale||'es-DO', firstFortnightDay:num(profile.firstFortnightDay)||15, secondFortnightRule:'last-day', projectionYear:new Date().getFullYear(), loanTypes:['Bancario','Personal','Informal','Tarjeta','Vehículo','Hipotecario','Otro'], commitmentCategories:['Casa','Servicios','Alimentación','Educación','Transporte','Seguros','Familia','Otros'], incomeCategories:['Salario','Extra','Bono','Negocio','Otro'] },
       lenders:[], loans:[], payments:[], incomes:[], commitments:[], goals:[], audit:[]
@@ -36,7 +103,7 @@
     d.payments.forEach(p=>{
       if(!('paymentType' in p)) p.paymentType = num(p.principal)===0 && num(p.interest)>0 ? 'interest-only' : 'mixed';
     });
-    d.schemaVersion = '1.2.0';
+    d.schemaVersion = '1.3.0';
     return d;
   }
 
@@ -64,8 +131,8 @@
   }
 
   function audit(action, detail){ if(!state.data) return; state.data.audit.unshift({id:uid('aud'),at:nowISO(),action,detail}); state.data.audit=state.data.audit.slice(0,300); }
-  function markDirty(action,detail){ state.dirty=true; state.data.updatedAt=nowISO(); if(action) audit(action,detail||''); renderSaveState(); }
-  function renderSaveState(){ const el=$('#saveState'); if(!el)return; el.className=`save-state ${state.dirty?'unsaved':'saved'}`; el.textContent=state.dirty?'● Cambios sin guardar':'✓ Archivo actualizado'; }
+  function markDirty(action,detail){ state.dirty=true; state.data.updatedAt=nowISO(); if(action) audit(action,detail||''); renderSaveState(); persistLocalData(); }
+  function renderSaveState(){ const el=$('#saveState'); if(!el)return; el.className=`save-state ${state.dirty?'unsaved':'saved'}`; el.textContent=state.dirty?'● Guardando...':'✓ Guardado automáticamente'; }`; el.textContent=state.dirty?'● Cambios sin guardar':'✓ Archivo actualizado'; }
   function toast(msg,type='success'){ const e=document.createElement('div'); e.className=`toast ${type}`; e.textContent=msg; $('#toastContainer').appendChild(e); setTimeout(()=>e.remove(),3300); }
 
   async function openJson(){
@@ -101,7 +168,7 @@
 
   function enterApp(){ $('#welcomeScreen').classList.add('hidden'); $('#appShell').classList.remove('hidden'); updateTopbar(); renderAll(); navigate('dashboard'); }
   function closeUser(){ if(state.dirty&&!confirm('Hay cambios sin guardar. ¿Cerrar de todos modos?')) return; state.data=null; state.fileHandle=null; state.fileName=''; state.dirty=false; $('#appShell').classList.add('hidden'); $('#welcomeScreen').classList.remove('hidden'); }
-  function updateTopbar(){ if(!state.data)return; $('#userNameLabel').textContent=state.data.profile.name; $('#userInitials').textContent=initials(state.data.profile.name); $('#userFileLabel').textContent=state.fileName||'Nuevo archivo'; renderSaveState(); }
+  function updateTopbar(){ if(!state.data)return; $('#userNameLabel').textContent=state.data.profile.name; $('#userInitials').textContent=initials(state.data.profile.name); $('#userFileLabel').textContent='Guardado local'; renderSaveState(); }
 
   function showModal(title,html,onReady){ $('#modalTitle').textContent=title; $('#modalBody').innerHTML=html; $('#modalBackdrop').classList.remove('hidden'); setTimeout(()=>onReady?.(),0); }
   function closeModal(){ $('#modalBackdrop').classList.add('hidden'); $('#modalBody').innerHTML=''; }
@@ -119,7 +186,7 @@
         <div class="field"><label>Primera quincena</label><input id="nuFortnight" type="number" min="1" max="28" value="15"></div>
         <div class="field"><label>Segunda quincena</label><input value="Último día del mes" disabled></div>
       </div><div class="form-actions"><button type="button" class="btn btn-ghost" data-close>Cerrar</button><button class="btn btn-primary">Crear dashboard</button></div></form>`,()=>{
-        $('#newUserForm').onsubmit=e=>{ e.preventDefault(); const name=formVal('nuName').trim(); if(!name)return; state.data=defaultData({name,currency:formVal('nuCurrency'),currencySymbol:formVal('nuSymbol')||'RD$',firstFortnightDay:num(formVal('nuFortnight'))}); state.fileHandle=null; state.fileName=''; state.dirty=true; audit('Usuario creado',name); closeModal(); enterApp(); toast('Dashboard creado. Guarda el JSON para conservarlo.'); };
+        $('#newUserForm').onsubmit=e=>{ e.preventDefault(); const name=formVal('nuName').trim(); if(!name)return; state.data=defaultData({name,currency:formVal('nuCurrency'),currencySymbol:formVal('nuSymbol')||'RD$',firstFortnightDay:num(formVal('nuFortnight'))}); state.fileHandle=null; state.fileName='Guardado local'; state.dirty=true; audit('Usuario creado',name); closeModal(); enterApp(); persistLocalData(); toast('FinCore configurado. Tus datos se guardan automáticamente.'); };
     });
   }
 
@@ -302,7 +369,7 @@
   }
   function reportText(){ reportPeriodDefaults(); const loans=reportFilteredLoans(),payments=reportFilteredPayments(loans); const paid=payments.reduce((s,p)=>s+num(p.amount),0),principal=payments.reduce((s,p)=>s+num(p.principal),0),interest=payments.reduce((s,p)=>s+num(p.interest),0),balance=loans.reduce((s,l)=>s+num(l.currentBalance),0); return `FINCORE — RESUMEN FILTRADO\nUsuario: ${state.data.profile.name}\nPeríodo: ${state.reportFilters.from} a ${state.reportFilters.to}\nAcreedor: ${state.reportFilters.lenderId?lenderName(state.reportFilters.lenderId):'Todos'}\nPréstamo: ${state.reportFilters.loanId?(state.data.loans.find(l=>l.id===state.reportFilters.loanId)?.name||'—'):'Todos'}\nTipo: ${state.reportFilters.type||'Todos'}\nEstado: ${state.reportFilters.status||'Todos'}\n\nPréstamos incluidos: ${loans.length}\nSaldo actual: ${money(balance)}\nPagado en período: ${money(paid)}\nCapital amortizado: ${money(principal)}\nIntereses / cargos: ${money(interest)}\nPagos registrados: ${payments.length}`; }
 
-  function renderSettings(){ const s=state.data.settings; $('#view-settings').innerHTML=`${pageHeader('Configuración','Personaliza FinCore y el comportamiento de las quincenas.','')}<div class="card"><form id="settingsForm"><div class="form-grid"><div class="field"><label>Nombre</label><input id="stName" value="${esc(state.data.profile.name)}"></div><div class="field"><label>Símbolo de moneda</label><input id="stSymbol" value="${esc(s.currencySymbol)}"></div><div class="field"><label>Primera quincena</label><input id="stFirst" type="number" min="1" max="28" value="${s.firstFortnightDay}"></div><div class="field"><label>Segunda quincena</label><input value="Último día del mes" disabled></div><div class="field"><label>Año de proyección</label><input id="stYear" type="number" min="2020" max="2100" value="${s.projectionYear}"></div><div class="field"><label>Locale</label><input id="stLocale" value="${esc(s.locale)}"></div><div class="field full"><label>Tipos de préstamo (separados por coma)</label><input id="stLoanTypes" value="${esc(s.loanTypes.join(', '))}"></div><div class="field full"><label>Categorías de compromisos</label><input id="stComCats" value="${esc(s.commitmentCategories.join(', '))}"></div><div class="field full"><label>Categorías de ingresos</label><input id="stIncCats" value="${esc(s.incomeCategories.join(', '))}"></div></div><div class="form-actions"><button class="btn btn-primary">Guardar configuración</button></div></form></div><div class="card" style="margin-top:12px"><h3>Archivo de datos</h3><div class="metric-line"><span>Versión del esquema</span><strong>${esc(state.data.schemaVersion)}</strong></div><div class="metric-line"><span>Creado</span><strong>${new Date(state.data.createdAt).toLocaleString()}</strong></div><div class="metric-line"><span>Actualizado</span><strong>${new Date(state.data.updatedAt).toLocaleString()}</strong></div></div>`; setTimeout(()=>{$('#settingsForm').onsubmit=e=>{e.preventDefault();state.data.profile.name=formVal('stName').trim()||state.data.profile.name;s.currencySymbol=formVal('stSymbol')||'RD$';s.firstFortnightDay=clamp(num(formVal('stFirst')),1,28);s.projectionYear=num(formVal('stYear'))||new Date().getFullYear();s.locale=formVal('stLocale')||'es-DO';s.loanTypes=formVal('stLoanTypes').split(',').map(x=>x.trim()).filter(Boolean);s.commitmentCategories=formVal('stComCats').split(',').map(x=>x.trim()).filter(Boolean);s.incomeCategories=formVal('stIncCats').split(',').map(x=>x.trim()).filter(Boolean);markDirty('Configuración actualizada','Preferencias');updateTopbar();renderAll();toast('Configuración guardada.');};},0); }
+  function renderSettings(){ const s=state.data.settings; $('#view-settings').innerHTML=`${pageHeader('Configuración','Personaliza FinCore y el comportamiento de las quincenas.','')}<div class="card"><form id="settingsForm"><div class="form-grid"><div class="field"><label>Nombre</label><input id="stName" value="${esc(state.data.profile.name)}"></div><div class="field"><label>Símbolo de moneda</label><input id="stSymbol" value="${esc(s.currencySymbol)}"></div><div class="field"><label>Primera quincena</label><input id="stFirst" type="number" min="1" max="28" value="${s.firstFortnightDay}"></div><div class="field"><label>Segunda quincena</label><input value="Último día del mes" disabled></div><div class="field"><label>Año de proyección</label><input id="stYear" type="number" min="2020" max="2100" value="${s.projectionYear}"></div><div class="field"><label>Locale</label><input id="stLocale" value="${esc(s.locale)}"></div><div class="field full"><label>Tipos de préstamo (separados por coma)</label><input id="stLoanTypes" value="${esc(s.loanTypes.join(', '))}"></div><div class="field full"><label>Categorías de compromisos</label><input id="stComCats" value="${esc(s.commitmentCategories.join(', '))}"></div><div class="field full"><label>Categorías de ingresos</label><input id="stIncCats" value="${esc(s.incomeCategories.join(', '))}"></div></div><div class="form-actions"><button class="btn btn-primary">Guardar configuración</button></div></form></div><div class="card" style="margin-top:12px"><h3>Almacenamiento local</h3><div class="metric-line"><span>Versión del esquema</span><strong>${esc(state.data.schemaVersion)}</strong></div><div class="metric-line"><span>Creado</span><strong>${new Date(state.data.createdAt).toLocaleString()}</strong></div><div class="metric-line"><span>Actualizado</span><strong>${new Date(state.data.updatedAt).toLocaleString()}</strong></div><div class="metric-line"><span>Ubicación</span><strong>Memoria interna de FinCore en este dispositivo</strong></div><div style="margin-top:16px"><button class="btn btn-danger" data-action="reset-local">Borrar todos los datos de FinCore</button></div></div>`; setTimeout(()=>{$('#settingsForm').onsubmit=e=>{e.preventDefault();state.data.profile.name=formVal('stName').trim()||state.data.profile.name;s.currencySymbol=formVal('stSymbol')||'RD$';s.firstFortnightDay=clamp(num(formVal('stFirst')),1,28);s.projectionYear=num(formVal('stYear'))||new Date().getFullYear();s.locale=formVal('stLocale')||'es-DO';s.loanTypes=formVal('stLoanTypes').split(',').map(x=>x.trim()).filter(Boolean);s.commitmentCategories=formVal('stComCats').split(',').map(x=>x.trim()).filter(Boolean);s.incomeCategories=formVal('stIncCats').split(',').map(x=>x.trim()).filter(Boolean);markDirty('Configuración actualizada','Preferencias');updateTopbar();renderAll();toast('Configuración guardada.');};},0); }
 
   function deleteBy(collection,id,label){ const arr=state.data[collection]; const idx=arr.findIndex(x=>x.id===id); if(idx<0)return; if(!confirm(`¿Eliminar ${label}?`))return; const [r]=arr.splice(idx,1); markDirty(`${label} eliminado`,r.name||r.id); renderAll(); }
   function deletePayment(id){ const idx=state.data.payments.findIndex(p=>p.id===id);if(idx<0)return;const p=state.data.payments[idx];const l=state.data.loans.find(x=>x.id===p.loanId);if(!confirm('¿Revertir este pago? El capital volverá al saldo del préstamo.'))return;if(l){l.currentBalance=num(l.currentBalance)+num(p.principal);if(p.interestSettledThroughDate&&l.interestLastSettledDate===p.interestSettledThroughDate)l.interestLastSettledDate=p.previousInterestSettledDate||'';}state.data.payments.splice(idx,1);markDirty('Pago revertido',money(p.amount));renderAll(); }
@@ -310,14 +377,14 @@
   document.addEventListener('click',e=>{
     const close=e.target.closest('[data-close]'); if(close){closeModal();return;}
     const b=e.target.closest('[data-action]'); if(!b)return; const a=b.dataset.action,id=b.dataset.id;
-    const map={'add-loan':()=>loanModal(),'edit-loan':()=>loanModal(id),'delete-loan':()=>deleteBy('loans',id,'préstamo'),'add-payment':paymentModal,'delete-payment':()=>deletePayment(id),'add-income':incomeModal,'delete-income':()=>deleteBy('incomes',id,'ingreso'),'add-commitment':commitmentModal,'delete-commitment':()=>deleteBy('commitments',id,'compromiso'),'add-lender':lenderModal,'delete-lender':()=>{if(state.data.loans.some(l=>l.lenderId===id)){toast('Este acreedor está asociado a préstamos.','error');return;}deleteBy('lenders',id,'acreedor');},'add-goal':goalModal,'delete-goal':()=>deleteBy('goals',id,'objetivo'),'cal-prev':()=>{state.calendarCursor=new Date(state.calendarCursor.getFullYear(),state.calendarCursor.getMonth()-1,1);renderCalendar();},'cal-next':()=>{state.calendarCursor=new Date(state.calendarCursor.getFullYear(),state.calendarCursor.getMonth()+1,1);renderCalendar();},'cal-today':()=>{state.calendarCursor=new Date();renderCalendar();},'report-loan':()=>{const l=state.data.loans.find(x=>x.id===id);state.reportFilters={from:'',to:'',lenderId:l?.lenderId||'',loanId:id,type:'',status:''};navigate('reports');},'report-lender':()=>{state.reportFilters={from:'',to:'',lenderId:id,loanId:'',type:'',status:''};navigate('reports');},'report-reset':()=>{state.reportFilters={from:'',to:'',lenderId:'',loanId:'',type:'',status:''};renderReports();},'copy-report':async()=>{try{await navigator.clipboard.writeText(reportText());toast('Resumen copiado.');}catch(e){toast('No se pudo copiar automáticamente.','error');}}}; map[a]?.();
+    const map={'add-loan':()=>loanModal(),'edit-loan':()=>loanModal(id),'delete-loan':()=>deleteBy('loans',id,'préstamo'),'add-payment':paymentModal,'delete-payment':()=>deletePayment(id),'add-income':incomeModal,'delete-income':()=>deleteBy('incomes',id,'ingreso'),'add-commitment':commitmentModal,'delete-commitment':()=>deleteBy('commitments',id,'compromiso'),'add-lender':lenderModal,'delete-lender':()=>{if(state.data.loans.some(l=>l.lenderId===id)){toast('Este acreedor está asociado a préstamos.','error');return;}deleteBy('lenders',id,'acreedor');},'add-goal':goalModal,'delete-goal':()=>deleteBy('goals',id,'objetivo'),'cal-prev':()=>{state.calendarCursor=new Date(state.calendarCursor.getFullYear(),state.calendarCursor.getMonth()-1,1);renderCalendar();},'cal-next':()=>{state.calendarCursor=new Date(state.calendarCursor.getFullYear(),state.calendarCursor.getMonth()+1,1);renderCalendar();},'cal-today':()=>{state.calendarCursor=new Date();renderCalendar();},'report-loan':()=>{const l=state.data.loans.find(x=>x.id===id);state.reportFilters={from:'',to:'',lenderId:l?.lenderId||'',loanId:id,type:'',status:''};navigate('reports');},'report-lender':()=>{state.reportFilters={from:'',to:'',lenderId:id,loanId:'',type:'',status:''};navigate('reports');},'report-reset':()=>{state.reportFilters={from:'',to:'',lenderId:'',loanId:'',type:'',status:''};renderReports();},'copy-report':async()=>{try{await navigator.clipboard.writeText(reportText());toast('Resumen copiado.');}catch(e){toast('No se pudo copiar automáticamente.','error');}},'reset-local':async()=>{if(!confirm('¿Borrar todos los datos guardados en este dispositivo? Esta acción no se puede deshacer.'))return;if(!confirm('Confirmación final: ¿eliminar completamente FinCore y comenzar desde cero?'))return;await clearLocalData();state.data=null;state.dirty=false;location.reload();}}; map[a]?.();
   });
 
-  $('#newUserBtn').onclick=newUserModal; $('#openJsonBtn').onclick=openJson; $('#jsonFileInput').onchange=async e=>{const f=e.target.files[0];if(f)loadJsonText(await f.text(),f.name,null);e.target.value='';}; $('#saveBtn').onclick=savePrimary; $('#exportBtn').onclick=()=>state.data&&downloadJson(`FinCore_${safeName(state.data.profile.name)}_copia_${todayISO()}.json`); $('#closeUserBtn').onclick=closeUser; $('#modalClose').onclick=closeModal; $('#modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop'){e.preventDefault();e.stopPropagation();}});
+  $('#newUserBtn').onclick=newUserModal; $('#modalClose').onclick=closeModal; $('#modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop'){e.preventDefault();e.stopPropagation();}});
   const mobileMoreBtn=$('#mobileMoreBtn'), mobileMenuTopBtn=$('#mobileMenuTopBtn'), mobileSidebar=document.querySelector('.sidebar');
   const setMobileMenu=(open)=>{if(!mobileSidebar||!mobileMoreBtn)return;mobileSidebar.classList.toggle('mobile-expanded',open);const s=mobileMoreBtn.querySelector('span');if(s)s.textContent=open?'Cerrar':'Menú';mobileMoreBtn.setAttribute('aria-label',open?'Cerrar menú':'Abrir menú');};
   if(mobileMoreBtn)mobileMoreBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded'))); if(mobileMenuTopBtn)mobileMenuTopBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded')));
   $('#mainNav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b){navigate(b.dataset.view);setMobileMenu(false);}});
   $('#globalSearch').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase(); if(!q)return; const loan=state.data?.loans.find(x=>x.name.toLowerCase().includes(q)); const lender=state.data?.lenders.find(x=>x.name.toLowerCase().includes(q)); if(loan)navigate('loans'); else if(lender)navigate('lenders'); });
-  window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&state.data)persistLocalData();});e.returnValue='';}});
 })();
