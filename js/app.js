@@ -705,9 +705,9 @@
   });
 
   $('#newUserBtn').onclick=newUserModal; $('#modalClose').onclick=closeModal; $('#modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop'){e.preventDefault();e.stopPropagation();}});
-  const mobileMoreBtn=$('#mobileMoreBtn'), mobileMenuTopBtn=$('#mobileMenuTopBtn'), mobileSidebar=document.querySelector('.sidebar');
+  const mobileMoreBtn=$('#mobileMoreBtn'), mobileMenuTopBtn=$('#mobileMenuTopBtn'), mobileMenuCloseBtn=$('#mobileMenuCloseBtn'), mobileSidebar=document.querySelector('.sidebar');
   const setMobileMenu=(open)=>{if(!mobileSidebar||!mobileMoreBtn)return;mobileSidebar.classList.toggle('mobile-expanded',open);const s=mobileMoreBtn.querySelector('span');if(s)s.textContent=open?'Cerrar':'Más';mobileMoreBtn.setAttribute('aria-label',open?'Cerrar menú':'Abrir más opciones');};
-  if(mobileMoreBtn)mobileMoreBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded'))); if(mobileMenuTopBtn)mobileMenuTopBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded')));
+  if(mobileMoreBtn)mobileMoreBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded'))); if(mobileMenuTopBtn)mobileMenuTopBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded'))); if(mobileMenuCloseBtn)mobileMenuCloseBtn.addEventListener('click',()=>setMobileMenu(false));
   $('#mainNav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b){navigate(b.dataset.view);setMobileMenu(false);}});
   $('#globalSearch').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase(); if(!q)return; const loan=state.data?.loans.find(x=>x.name.toLowerCase().includes(q)); const lender=state.data?.lenders.find(x=>x.name.toLowerCase().includes(q)); if(loan)navigate('loans'); else if(lender)navigate('lenders'); });
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&state.data)persistLocalData();});
