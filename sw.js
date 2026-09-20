@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fincore-pwa-v1.5.1';
+const CACHE_NAME = 'fincore-pwa-v2.0';
 const APP_SHELL = [
   './',
   './index.html',
