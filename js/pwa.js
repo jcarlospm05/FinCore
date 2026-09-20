@@ -1,4 +1,4 @@
-const FINCORE_PWA_VERSION = '2.0.2';
+const FINCORE_PWA_VERSION = '2.0.3';
 (() => {
   let deferredPrompt = null;
   const installButtons = [
@@ -38,7 +38,7 @@ const FINCORE_PWA_VERSION = '2.0.2';
 
   if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protocol)) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=2.0.2',{updateViaCache:'none'}).catch(err => {
+      navigator.serviceWorker.register('./sw.js?v=2.0.3',{updateViaCache:'none'}).catch(err => {
         console.warn('FinCore: no se pudo registrar el modo offline.', err);
       });
     });
