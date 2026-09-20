@@ -712,6 +712,24 @@
   $('#globalSearch').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase(); if(!q)return; const loan=state.data?.loans.find(x=>x.name.toLowerCase().includes(q)); const lender=state.data?.lenders.find(x=>x.name.toLowerCase().includes(q)); if(loan)navigate('loans'); else if(lender)navigate('lenders'); });
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&state.data)persistLocalData();});
   async function initializeFinCoreLocal(){
+    const standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+    const newUserBtn=$('#newUserBtn'), installBtn=$('#installPwaBtn');
+    const subtitle=$('#welcomeSubtitle'), copy=$('#welcomeCopy'), note=$('#welcomeNote');
+
+    if(!standalone){
+      state.data=null;
+      state.dirty=false;
+      $('#appShell').classList.add('hidden');
+      $('#welcomeScreen').classList.remove('hidden');
+      if(newUserBtn)newUserBtn.classList.add('hidden');
+      if(installBtn)installBtn.classList.remove('hidden');
+      if(subtitle)subtitle.textContent='Instala FinCore para comenzar';
+      if(copy)copy.textContent='FinCore no abrirá ni leerá tus datos personales desde esta página del navegador. Instala la app y ábrela desde tu pantalla de inicio.';
+      if(note)note.textContent='Primero instala • Después configura • Tus datos quedan en la app';
+      return;
+    }
+
+    if(installBtn)installBtn.classList.add('hidden');
     const saved=await loadLocalData();
     if(saved){
       try{
@@ -719,11 +737,17 @@
         state.fileName='Guardado local';
         state.dirty=false;
         enterApp();
+        return;
       }catch(e){
         await clearLocalData();
         toast('Los datos locales estaban dañados y se reiniciaron.','error');
       }
     }
+
+    if(newUserBtn)newUserBtn.classList.remove('hidden');
+    if(subtitle)subtitle.textContent='Configura tu FinCore';
+    if(copy)copy.textContent='Esta es la primera vez que abres la app. Crea tu usuario para comenzar.';
+    if(note)note.textContent='Usuario único • Guardado automático • Datos locales';
   }
   initializeFinCoreLocal();
 })();
