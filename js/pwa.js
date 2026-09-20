@@ -1,4 +1,4 @@
-const FINCORE_PWA_VERSION = '2.0.3';
+const FINCORE_PWA_VERSION = '2.0.4';
 (() => {
   let deferredPrompt = null;
   const installButtons = [
@@ -38,7 +38,7 @@ const FINCORE_PWA_VERSION = '2.0.3';
 
   if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protocol)) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js?v=2.0.3',{updateViaCache:'none'}).catch(err => {
+      navigator.serviceWorker.register('./sw.js?v=2.0.4',{updateViaCache:'none'}).catch(err => {
         console.warn('FinCore: no se pudo registrar el modo offline.', err);
       });
     });
@@ -46,7 +46,7 @@ const FINCORE_PWA_VERSION = '2.0.3';
 
   // Sigue funcionando desde file:// como la versión de PC, pero la instalación PWA
   // y el modo offline requieren HTTPS (o localhost) por seguridad del navegador.
-  if (isStandalone()) setInstallVisible(false);
+  if (isStandalone()) setInstallVisible(false); else setInstallVisible(true);
 })();
 
 
