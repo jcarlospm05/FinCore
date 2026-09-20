@@ -985,3 +985,91 @@ body{font-family:Inter,Segoe UI,Arial,sans-serif}
   .v2-month-grid{grid-template-columns:1fr}
   .v2-debt-hero strong{font-size:27px}
 }
+
+
+/* FinCore v2.0.1 — Ultra Simple Mobile */
+.mobile-app-title{display:none}
+@media(max-width:700px){
+  /* El encabezado móvil queda como una app, no como una web de escritorio */
+  .topbar{
+    padding:8px 10px!important;
+    min-height:54px;
+    border-radius:14px!important;
+  }
+  .topbar-left{display:none!important}
+  .topbar-right{
+    order:1!important;
+    display:grid!important;
+    grid-template-columns:auto 1fr auto!important;
+    width:100%;
+    gap:8px!important;
+    align-items:center;
+  }
+  .mobile-app-title{
+    display:block;
+    text-align:center;
+    color:#111827;
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:-.02em;
+  }
+  .mobile-menu-top-btn{
+    min-height:38px!important;
+    padding:7px 10px!important;
+  }
+  .mobile-menu-top-btn{font-size:0!important}
+  .mobile-menu-top-btn:after{
+    content:"☰ Más";
+    font-size:13px;
+    font-weight:700;
+  }
+  .save-state{
+    font-size:0!important;
+    width:34px;
+    min-width:34px!important;
+    height:34px;
+    padding:0!important;
+    border-radius:50%!important;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .save-state:after{
+    content:"✓";
+    font-size:15px;
+    font-weight:900;
+  }
+  .user-chip{display:none!important}
+
+  /* Barra inferior: sólo lo esencial */
+  #mainNav{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  }
+  #mainNav .nav-item{display:none!important}
+  #mainNav .nav-item[data-view="dashboard"],
+  #mainNav .nav-item[data-view="loans"],
+  #mainNav .nav-item[data-view="payments"],
+  #mainNav .nav-item[data-view="calendar"],
+  #mainNav .mobile-more-btn{
+    display:flex!important;
+  }
+
+  /* Más: sólo cinco opciones secundarias; acreedores y metas quedan ocultos
+     porque ya se manejan desde Deudas / no son necesarios en el modo simple. */
+  .sidebar.mobile-expanded #mainNav .nav-item{display:none!important}
+  .sidebar.mobile-expanded #mainNav .nav-item[data-view="income"],
+  .sidebar.mobile-expanded #mainNav .nav-item[data-view="commitments"],
+  .sidebar.mobile-expanded #mainNav .nav-item[data-view="forecast"],
+  .sidebar.mobile-expanded #mainNav .nav-item[data-view="reports"],
+  .sidebar.mobile-expanded #mainNav .nav-item[data-view="settings"],
+  .sidebar.mobile-expanded #mobileMoreBtn{
+    display:flex!important;
+  }
+  .sidebar.mobile-expanded #mainNav{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .sidebar.mobile-expanded:before{
+    content:"Más opciones"!important;
+  }
+  .v2-advanced-nav{display:none!important}
+}
