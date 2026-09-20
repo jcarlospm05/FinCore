@@ -1,0 +1,2 @@
+# FinCore
+PWA finanzas personales
