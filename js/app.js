@@ -83,7 +83,7 @@
   function defaultData(profile={}){
     const name = profile.name || 'Usuario';
     return {
-      app:'FinCore', schemaVersion:'1.3.0', createdAt:nowISO(), updatedAt:nowISO(),
+      app:'FinCore', schemaVersion:'2.0.0', createdAt:nowISO(), updatedAt:nowISO(),
       profile:{ id:uid('usr'), name, email:profile.email||'', notes:'' },
       settings:{ currency:profile.currency||'DOP', currencySymbol:profile.currencySymbol||'RD$', locale:profile.locale||'es-DO', firstFortnightDay:num(profile.firstFortnightDay)||15, secondFortnightRule:'last-day', projectionYear:new Date().getFullYear(), loanTypes:['Bancario','Personal','Informal','Tarjeta','Vehículo','Hipotecario','Otro'], commitmentCategories:['Casa','Servicios','Alimentación','Educación','Transporte','Seguros','Familia','Otros'], incomeCategories:['Salario','Extra','Bono','Negocio','Otro'] },
       lenders:[], loans:[], payments:[], incomes:[], commitments:[], goals:[], audit:[]
@@ -103,7 +103,7 @@
     d.payments.forEach(p=>{
       if(!('paymentType' in p)) p.paymentType = num(p.principal)===0 && num(p.interest)>0 ? 'interest-only' : 'mixed';
     });
-    d.schemaVersion = '1.3.0';
+    d.schemaVersion = '2.0.0';
     return d;
   }
 
@@ -409,6 +409,294 @@
 
   function deleteBy(collection,id,label){ const arr=state.data[collection]; const idx=arr.findIndex(x=>x.id===id); if(idx<0)return; if(!confirm(`¿Eliminar ${label}?`))return; const [r]=arr.splice(idx,1); markDirty(`${label} eliminado`,r.name||r.id); renderAll(); }
   function deletePayment(id){ const idx=state.data.payments.findIndex(p=>p.id===id);if(idx<0)return;const p=state.data.payments[idx];const l=state.data.loans.find(x=>x.id===p.loanId);if(!confirm('¿Revertir este pago? El capital volverá al saldo del préstamo.'))return;if(l){l.currentBalance=num(l.currentBalance)+num(p.principal);if(p.interestSettledThroughDate&&l.interestLastSettledDate===p.interestSettledThroughDate)l.interestLastSettledDate=p.previousInterestSettledDate||'';}state.data.payments.splice(idx,1);markDirty('Pago revertido',money(p.amount));renderAll(); }
+
+
+  /* FinCore 2.0 — modo simple dominicano */
+  function debtScheduleFromLoan(l){
+    if(l.paymentSchedule)return l.paymentSchedule;
+    if(l.frequency==='quincenal')return 'both';
+    if(l.frequency==='manual'||l.maintenance===false)return 'none';
+    if(l.nextPaymentDate){
+      const d=new Date(l.nextPaymentDate+'T12:00:00');
+      if(d.getDate()===15)return '15';
+      if(d.getDate()>=28)return 'end';
+    }
+    return 'custom';
+  }
+  function scheduleDate(kind,custom=''){
+    const n=new Date(), y=n.getFullYear(), m=n.getMonth(), day=n.getDate();
+    if(kind==='15'){
+      const d=day<=15?new Date(y,m,15):new Date(y,m+1,15);
+      return localISO(d);
+    }
+    if(kind==='end'){
+      return localISO(new Date(y,m,lastDay(y,m)));
+    }
+    if(kind==='both'){
+      if(day<=15)return localISO(new Date(y,m,15));
+      return localISO(new Date(y,m,lastDay(y,m)));
+    }
+    return custom||todayISO();
+  }
+  function friendlyDebtStatus(l){
+    if(num(l.currentBalance)<=0)return 'Saldada';
+    if(!l.maintenance||l.status==='paused')return 'Pausada';
+    return 'Pagando';
+  }
+  function friendlyPaymentType(p){
+    if(p.paymentType==='interest-only'||(num(p.principal)===0&&num(p.interest)>0))return 'Solo interés';
+    if(num(p.interest)>0)return 'Interés + abono';
+    return 'Abono';
+  }
+
+  function renderDashboard(){
+    const m=computeMetrics();
+    const now=new Date(), monthStart=new Date(now.getFullYear(),now.getMonth(),1), monthEnd=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59);
+    const monthPayments=state.data.payments.filter(p=>{const d=new Date(p.date+'T12:00:00');return d>=monthStart&&d<=monthEnd;});
+    const paidMonth=monthPayments.reduce((s,p)=>s+num(p.amount),0);
+    const debtDownMonth=monthPayments.reduce((s,p)=>s+num(p.principal),0);
+    const upcoming=eventsForRange(new Date(),new Date(Date.now()+31*864e5)).filter(e=>['loan','commitment'].includes(e.type)).slice(0,6);
+    $('#view-dashboard').innerHTML=`${pageHeader(`Hola, ${state.data.profile.name.split(' ')[0]}`,'Tu dinero, claro y al día.','<button class="btn btn-primary" data-action="add-payment">+ Registrar pago</button>')}
+      <div class="v2-debt-hero">
+        <span>Debo ahora</span>
+        <strong>${money(m.total)}</strong>
+        <small>Saldo total pendiente</small>
+      </div>
+
+      <div class="v2-quincena-card">
+        <div class="v2-section-title"><div><h3>Esta quincena</h3><p>Hasta ${fmtDate(localISO(m.next.end))}</p></div></div>
+        <div class="v2-quincena-grid">
+          <div><span>Voy a recibir</span><strong>${money(m.income)}</strong></div>
+          <div><span>Tengo que pagar</span><strong>${money(m.commitments)}</strong></div>
+          <div class="${m.available<0?'negative':''}"><span>Me quedan</span><strong>${money(m.available)}</strong></div>
+        </div>
+      </div>
+
+      <div class="v2-dashboard-grid">
+        <div class="card simple-panel">
+          <div class="v2-section-title"><div><h3>Próximos pagos</h3><p>Lo que viene en los próximos 31 días.</p></div></div>
+          ${upcoming.length?`<div class="upcoming-list">${upcoming.map(e=>`<div class="upcoming-row"><div><strong>${esc(e.name)}</strong><small>${fmtDate(e.date)} · ${e.type==='loan'?'Deuda':'Gasto fijo'}</small></div><b>${money(e.amount)}</b></div>`).join('')}</div>`:empty('Nada pendiente','No tienes pagos programados en los próximos 31 días.')}
+        </div>
+
+        <div class="card simple-panel">
+          <div class="v2-section-title"><div><h3>Este mes</h3><p>Lo que ya has pagado.</p></div></div>
+          <div class="v2-month-grid">
+            <div><span>He pagado</span><strong>${money(paidMonth)}</strong></div>
+            <div><span>Mi deuda bajó</span><strong>${money(debtDownMonth)}</strong></div>
+          </div>
+        </div>
+
+        <div class="card simple-panel v2-chart-panel">
+          <div class="v2-section-title"><div><h3>Mi deuda</h3><p>Cómo ha bajado en los últimos 6 meses.</p></div></div>
+          <div class="chart-wrap simple-chart"><canvas id="debtLine" class="chart-canvas"></canvas></div>
+        </div>
+      </div>`;
+    requestAnimationFrame(drawDashboardCharts);
+  }
+
+  function drawDashboardCharts(){
+    const months=lastTwelveMonths().slice(-6), balances=debtHistory(months);
+    if($('#debtLine'))FinCharts.line($('#debtLine'),months.map(x=>x.label),balances,{color:FinCharts.colors.blue});
+  }
+
+  function renderLoans(){
+    const rows=state.data.loans;
+    $('#view-loans').innerHTML=`${pageHeader('Mis deudas','A quién le debes, cuánto debes y cuánto vas pagando.','<button class="btn btn-primary" data-action="add-loan">+ Agregar deuda</button>')}
+      ${rows.length?`<div class="v2-debt-list">${rows.map(l=>`
+        <div class="v2-debt-card">
+          <div class="v2-debt-card-main">
+            <div><strong>${esc(l.name)}</strong><small>${esc(lenderName(l.lenderId)==='—'?'Sin acreedor':lenderName(l.lenderId))}</small></div>
+            <div class="v2-debt-balance"><span>Debo</span><b>${money(l.currentBalance)}</b></div>
+          </div>
+          <div class="v2-debt-card-foot">
+            <span class="v2-status ${friendlyDebtStatus(l).toLowerCase()}">${friendlyDebtStatus(l)}</span>
+            ${l.maintenance&&num(l.scheduledAmount)>0?`<span>Pago usual: <b>${money(l.scheduledAmount)}</b></span>`:''}
+            <div class="v2-card-actions"><button class="btn btn-secondary btn-compact" data-action="edit-loan" data-id="${l.id}">Editar</button><button class="btn btn-danger btn-compact" data-action="delete-loan" data-id="${l.id}">Eliminar</button></div>
+          </div>
+        </div>`).join('')}</div>`:empty('No tienes deudas registradas','Agrega una deuda con lo básico: a quién, cuánto y cómo la pagas.')}`;
+  }
+
+  function loanModal(editId=''){
+    const l=state.data.loans.find(x=>x.id===editId)||{}, s=state.data.settings;
+    const schedule=debtScheduleFromLoan(l);
+    const lenderValue=l.lenderId?lenderName(l.lenderId):'';
+    showModal(editId?'Editar deuda':'Agregar deuda',`<form id="loanForm">
+      <div class="form-grid v2-simple-form">
+        <div class="field full"><label>¿Qué deuda es?</label><input id="lnName" required value="${esc(l.name||'')}" placeholder="Ej. Préstamo de Juan, tarjeta, carro"></div>
+        <div class="field full"><label>¿A quién le debes?</label><input id="lnLenderName" value="${esc(lenderValue==='—'?'':lenderValue)}" placeholder="Persona, banco o institución"></div>
+        <div class="field full"><label>¿Cuánto debes ahora?</label><input id="lnBalance" inputmode="decimal" type="number" min="0" step="0.01" required value="${l.currentBalance??''}" placeholder="0.00"></div>
+
+        <div class="field full"><label>¿La estás pagando ahora?</label>
+          <select id="lnPaying"><option value="yes" ${l.maintenance!==false?'selected':''}>Sí</option><option value="no" ${l.maintenance===false?'selected':''}>No, por ahora no</option></select>
+        </div>
+
+        <div id="lnPaymentFields" class="field full">
+          <div class="v2-inline-fields">
+            <div class="field"><label>¿Cuánto pagas normalmente?</label><input id="lnScheduled" inputmode="decimal" type="number" min="0" step="0.01" value="${l.scheduledAmount??''}" placeholder="0.00"></div>
+            <div class="field"><label>¿Cuándo pagas?</label><select id="lnSchedule">
+              <option value="both" ${schedule==='both'?'selected':''}>15 y fin de mes</option>
+              <option value="15" ${schedule==='15'?'selected':''}>Los 15</option>
+              <option value="end" ${schedule==='end'?'selected':''}>Fin de mes</option>
+              <option value="custom" ${schedule==='custom'?'selected':''}>Otra fecha</option>
+            </select></div>
+          </div>
+          <div id="lnCustomDateWrap" class="field ${schedule==='custom'?'':'hidden'}"><label>Próximo pago</label><input id="lnNext" type="date" value="${l.nextPaymentDate||todayISO()}"></div>
+        </div>
+
+        <details class="v2-advanced field full">
+          <summary>Opciones avanzadas</summary>
+          <div class="v2-advanced-grid">
+            <div class="field"><label>Tipo de deuda</label><select id="lnType">${selectOptions(s.loanTypes,l.type||'Personal')}</select></div>
+            <div class="field"><label>Monto original</label><input id="lnInitial" type="number" min="0" step="0.01" value="${l.initialAmount??l.currentBalance??''}"></div>
+            <div class="field"><label>Desde cuándo la tienes</label><input id="lnStart" type="date" value="${l.startDate||todayISO()}"></div>
+            <div class="field"><label>Interés %</label><input id="lnRate" type="number" min="0" step="0.0001" value="${l.interestRate??''}" placeholder="Opcional"></div>
+            <div class="field"><label>Cómo se cobra el interés</label><select id="lnInterestFreq">
+              <option value="none" ${!l.interestFrequency||l.interestFrequency==='none'?'selected':''}>No calcular</option>
+              <option value="daily" ${l.interestFrequency==='daily'?'selected':''}>Diario</option>
+              <option value="fortnightly" ${l.interestFrequency==='fortnightly'?'selected':''}>Quincenal</option>
+              <option value="monthly" ${l.interestFrequency==='monthly'?'selected':''}>Mensual</option>
+              <option value="annual" ${l.interestFrequency==='annual'?'selected':''}>Anual</option>
+            </select></div>
+            <div class="field full"><label>Notas</label><textarea id="lnNotes">${esc(l.notes||'')}</textarea></div>
+          </div>
+        </details>
+      </div>
+      <div class="form-actions"><button type="button" class="btn btn-ghost" data-close>Cancelar</button><button class="btn btn-primary">Guardar deuda</button></div>
+    </form>`,()=>{
+      const paying=$('#lnPaying'), paymentFields=$('#lnPaymentFields'), scheduleEl=$('#lnSchedule'), customWrap=$('#lnCustomDateWrap');
+      const refresh=()=>{paymentFields.classList.toggle('hidden',paying.value==='no');customWrap.classList.toggle('hidden',scheduleEl.value!=='custom');};
+      paying.addEventListener('change',refresh);scheduleEl.addEventListener('change',refresh);refresh();
+      $('#loanForm').onsubmit=e=>{
+        e.preventDefault();
+        const balance=num(formVal('lnBalance')), payingNow=formVal('lnPaying')==='yes', sch=payingNow?formVal('lnSchedule'):'none';
+        let lenderId=l.lenderId||'', lenderText=formVal('lnLenderName').trim();
+        if(lenderText){
+          let lender=state.data.lenders.find(x=>x.name.trim().toLowerCase()===lenderText.toLowerCase());
+          if(!lender){lender={id:uid('lend'),name:lenderText,type:'Persona',phone:'',email:'',paymentInfo:'',notes:'',createdAt:nowISO()};state.data.lenders.push(lender);}
+          lenderId=lender.id;
+        }else lenderId='';
+        const rate=num(formVal('lnRate')), interestFrequency=rate>0?formVal('lnInterestFreq'):'none';
+        const next=payingNow?scheduleDate(sch,formVal('lnNext')):todayISO();
+        const rec={
+          id:l.id||uid('loan'),name:formVal('lnName').trim(),lenderId,
+          type:formVal('lnType')||l.type||'Personal',
+          initialAmount:num(formVal('lnInitial'))||l.initialAmount||balance,
+          currentBalance:balance,startDate:formVal('lnStart')||l.startDate||todayISO(),
+          interestRate:rate,interestFrequency,interestLastSettledDate:l.interestLastSettledDate||'',
+          scheduledAmount:payingNow?num(formVal('lnScheduled')):0,
+          frequency:sch==='both'?'quincenal':(sch==='none'?'manual':'mensual'),
+          paymentSchedule:sch,nextPaymentDate:next,status:'active',maintenance:payingNow,
+          notes:formVal('lnNotes'),createdAt:l.createdAt||nowISO(),updatedAt:nowISO()
+        };
+        if(editId)Object.assign(l,rec);else state.data.loans.push(rec);
+        markDirty(editId?'Deuda editada':'Deuda creada',rec.name);closeModal();renderAll();
+      };
+    });
+  }
+
+  function renderPayments(){
+    const arr=[...state.data.payments].sort((a,b)=>b.date.localeCompare(a.date));
+    $('#view-payments').innerHTML=`${pageHeader('Pagos','Registra lo que pagaste de forma sencilla.','<button class="btn btn-primary" data-action="add-payment">+ Registrar pago</button>')}
+      ${arr.length?`<div class="card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Deuda</th><th>Qué hiciste</th><th>Pagaste</th><th>La deuda bajó</th><th>Saldo</th><th></th></tr></thead><tbody>${arr.map(p=>`<tr><td>${fmtDate(p.date)}</td><td><strong>${esc(state.data.loans.find(l=>l.id===p.loanId)?.name||'Deuda eliminada')}</strong></td><td>${friendlyPaymentType(p)}</td><td>${money(p.amount)}</td><td>${money(p.principal)}</td><td>${money(p.newBalance)}</td><td><button class="btn btn-danger btn-compact" data-action="delete-payment" data-id="${p.id}">Revertir</button></td></tr>`).join('')}</tbody></table></div></div>`:empty('Aún no has registrado pagos','Cuando pagues algo, regístralo aquí.')}`;
+  }
+
+  function paymentModal(){
+    const loans=state.data.loans.filter(l=>num(l.currentBalance)>0);
+    if(!loans.length){toast('Primero agrega una deuda con saldo.','error');return;}
+    showModal('Registrar pago',`<form id="paymentForm">
+      <div class="form-grid v2-simple-form">
+        <div class="field full"><label>¿Qué deuda pagaste?</label><select id="pmLoan" required>${entityOptions(loans.map(l=>({id:l.id,name:`${l.name} — debes ${money(l.currentBalance)}`})))}</select></div>
+        <div class="field"><label>Fecha</label><input id="pmDate" type="date" value="${todayISO()}" required></div>
+        <div class="field"><label>¿Qué hiciste?</label><select id="pmMode">
+          <option value="capital">Aboné a la deuda</option>
+          <option value="interest-only">Pagué solo interés</option>
+          <option value="mixed">Pagué interés + aboné</option>
+        </select></div>
+        <div class="field full"><label>¿Cuánto pagaste en total?</label><input id="pmAmount" inputmode="decimal" type="number" min="0.01" step="0.01" required placeholder="0.00"></div>
+        <div id="pmPrincipalWrap" class="field full hidden"><label>De ese pago, ¿cuánto bajó la deuda?</label><input id="pmPrincipal" inputmode="decimal" type="number" min="0" step="0.01" value="0" placeholder="0.00"><div class="card-sub">Lo restante se guardará como interés o cargo.</div></div>
+        <div class="field full"><label>Nota <span class="optional">(opcional)</span></label><textarea id="pmNote" placeholder="Ej. Pago de septiembre"></textarea></div>
+      </div>
+      <div class="form-actions"><button type="button" class="btn btn-ghost" data-close>Cancelar</button><button class="btn btn-primary">Guardar pago</button></div>
+    </form>`,()=>{
+      const mode=$('#pmMode'), wrap=$('#pmPrincipalWrap'), amount=$('#pmAmount'), principal=$('#pmPrincipal');
+      const refresh=()=>{wrap.classList.toggle('hidden',mode.value!=='mixed');if(mode.value==='capital')principal.value=amount.value||'0';if(mode.value==='interest-only')principal.value='0';};
+      mode.addEventListener('change',refresh);
+      amount.addEventListener('input',()=>{if(mode.value==='capital')principal.value=amount.value||'0';});
+      refresh();
+      $('#paymentForm').onsubmit=e=>{
+        e.preventDefault();
+        const loan=state.data.loans.find(l=>l.id===formVal('pmLoan'));if(!loan)return;
+        const paymentMode=formVal('pmMode'), total=num(formVal('pmAmount'));
+        let principalPaid=paymentMode==='interest-only'?0:(paymentMode==='capital'?total:num(formVal('pmPrincipal')));
+        if(total<=0){toast('Escribe cuánto pagaste.','error');return;}
+        if(principalPaid<0||principalPaid>total){toast('El abono no puede ser mayor que el pago total.','error');return;}
+        if(principalPaid>num(loan.currentBalance)){principalPaid=num(loan.currentBalance);}
+        const interest=Math.max(0,total-principalPaid), prev=num(loan.currentBalance), next=Math.max(0,prev-principalPaid);
+        const previousInterestSettledDate=loan.interestLastSettledDate||'';
+        const p={id:uid('pay'),loanId:loan.id,date:formVal('pmDate'),paymentType:paymentMode,amount:total,principal:principalPaid,interest,previousBalance:prev,newBalance:next,interestSettledThroughDate:interest>0?formVal('pmDate'):'',previousInterestSettledDate,note:formVal('pmNote'),createdAt:nowISO()};
+        state.data.payments.push(p);loan.currentBalance=next;if(interest>0)loan.interestLastSettledDate=formVal('pmDate');if(next===0)loan.maintenance=false;
+        markDirty('Pago registrado',`${loan.name}: ${money(total)}`);closeModal();renderAll();
+      };
+    });
+  }
+
+  function renderCalendar(){
+    const d=new Date(), first=num(state.data.settings.firstFortnightDay)||15;
+    const start=d.getDate()<=first?new Date(d.getFullYear(),d.getMonth(),1):new Date(d.getFullYear(),d.getMonth(),first+1);
+    const end=d.getDate()<=first?new Date(d.getFullYear(),d.getMonth(),first,23,59,59):new Date(d.getFullYear(),d.getMonth(),lastDay(d.getFullYear(),d.getMonth()),23,59,59);
+    const ev=eventsForRange(start,end), income=ev.filter(e=>e.type==='income').reduce((s,e)=>s+num(e.amount),0), out=ev.filter(e=>['loan','commitment'].includes(e.type)).reduce((s,e)=>s+num(e.amount),0);
+    const list=ev.filter(e=>['loan','commitment','income'].includes(e.type));
+    $('#view-calendar').innerHTML=`${pageHeader('Mi quincena',`${fmtDate(localISO(start))} al ${fmtDate(localISO(end))}`,'')}
+      <div class="v2-quincena-card">
+        <div class="v2-quincena-grid">
+          <div><span>Voy a recibir</span><strong>${money(income)}</strong></div>
+          <div><span>Tengo que pagar</span><strong>${money(out)}</strong></div>
+          <div class="${income-out<0?'negative':''}"><span>Me quedan</span><strong>${money(income-out)}</strong></div>
+        </div>
+      </div>
+      <div class="card simple-panel" style="margin-top:10px"><div class="v2-section-title"><div><h3>Movimientos de esta quincena</h3><p>Ingresos, deudas y gastos fijos programados.</p></div></div>
+        ${list.length?`<div class="upcoming-list">${list.map(e=>`<div class="upcoming-row"><div><strong>${esc(e.name)}</strong><small>${fmtDate(e.date)} · ${e.type==='income'?'Ingreso':e.type==='loan'?'Deuda':'Gasto fijo'}</small></div><b>${e.type==='income'?'+':'-'}${money(e.amount)}</b></div>`).join('')}</div>`:empty('Quincena tranquila','No tienes movimientos programados en esta quincena.')}
+      </div>`;
+  }
+
+  function eventsForYear(y){
+    const out=[], firstDay=num(state.data.settings.firstFortnightDay)||15;
+    const addRecurring=(arr,type)=>{arr.forEach(it=>{const start=it.startDate?new Date(it.startDate+'T12:00:00'):new Date(y,0,1);if(it.frequency==='unico'){if(start.getFullYear()===y)out.push({type,name:it.name,amount:num(it.amount),date:it.startDate,id:it.id});return;}for(let m=0;m<12;m++){if(new Date(y,m,lastDay(y,m))<start)continue;if(it.frequency==='quincenal'){[firstDay,lastDay(y,m)].forEach(day=>{const dt=new Date(y,m,Math.min(day,lastDay(y,m)));if(dt>=start)out.push({type,name:it.name,amount:num(it.amount),date:localISO(dt),id:it.id});});}else if(it.frequency==='mensual'){const day=it.dayOfMonth||start.getDate();const dt=new Date(y,m,Math.min(day,lastDay(y,m)));if(dt>=start)out.push({type,name:it.name,amount:num(it.amount),date:localISO(dt),id:it.id});}}});};
+    addRecurring(state.data.incomes,'income');addRecurring(state.data.commitments,'commitment');
+    state.data.loans.filter(l=>l.maintenance&&l.status!=='paused'&&num(l.currentBalance)>0&&num(l.scheduledAmount)>0).forEach(l=>{
+      const sch=debtScheduleFromLoan(l), start=l.nextPaymentDate?new Date(l.nextPaymentDate+'T12:00:00'):new Date(y,0,firstDay);
+      for(let m=0;m<12;m++){
+        if(new Date(y,m,lastDay(y,m))<start)continue;
+        let days=[];
+        if(sch==='both')days=[firstDay,lastDay(y,m)];
+        else if(sch==='15')days=[firstDay];
+        else if(sch==='end')days=[lastDay(y,m)];
+        else if(sch==='custom'||l.frequency==='monthly')days=[Math.min(start.getDate(),lastDay(y,m))];
+        days.forEach(day=>{const dt=new Date(y,m,Math.min(day,lastDay(y,m)));if(dt>=start)out.push({type:'loan',name:l.name,amount:num(l.scheduledAmount),date:localISO(dt),id:l.id});});
+      }
+    });
+    state.data.payments.filter(p=>new Date(p.date+'T12:00:00').getFullYear()===y).forEach(p=>out.push({type:'payment',name:`Pago: ${state.data.loans.find(l=>l.id===p.loanId)?.name||'Deuda'}`,amount:num(p.amount),date:p.date,id:p.id}));
+    return out;
+  }
+
+  function renderCommitments(){
+    const arr=state.data.commitments;
+    $('#view-commitments').innerHTML=`${pageHeader('Gastos fijos','Casa, servicios, comida, educación y otros pagos habituales.','<button class="btn btn-primary" data-action="add-commitment">+ Agregar gasto fijo</button>')}${arr.length?simpleTable(['Gasto','Categoría','Monto','Frecuencia',''],arr.map(i=>[`<strong>${esc(i.name)}</strong>`,esc(i.category),money(i.amount),esc(freqLabel(i.frequency)),actions('delete-commitment',i.id)])):empty('Sin gastos fijos','Agrega tus pagos habituales para organizar la quincena.')}`;
+  }
+
+  function renderForecast(){
+    const y=num(state.data.settings.projectionYear)||new Date().getFullYear(), f=forecastByMonth(y), totals={income:f.income.reduce(sum,0),out:f.outgo.reduce(sum,0),loan:f.loan.reduce(sum,0)};
+    $('#view-forecast').innerHTML=`${pageHeader('Mi plan',`Una mirada sencilla a ${y}.`,'')}
+      <div class="simple-summary-grid">
+        <div class="summary-card"><span>Ingresos estimados</span><strong>${money(totals.income)}</strong></div>
+        <div class="summary-card"><span>Pagos y gastos</span><strong>${money(totals.out)}</strong></div>
+        <div class="summary-card"><span>Para deudas</span><strong>${money(totals.loan)}</strong></div>
+        <div class="summary-card"><span>Disponible estimado</span><strong>${money(totals.income-totals.out)}</strong></div>
+      </div>
+      <div class="card simple-panel"><div class="v2-section-title"><div><h3>Mes a mes</h3><p>Una referencia, no una promesa.</p></div></div><div class="chart-wrap simple-chart"><canvas id="forecastBars"></canvas></div></div>`;
+    requestAnimationFrame(()=>{if($('#forecastBars'))FinCharts.bars($('#forecastBars'),monthNames,f.income,f.outgo);});
+  }
+
 
   document.addEventListener('click',e=>{
     const close=e.target.closest('[data-close]'); if(close){closeModal();return;}
