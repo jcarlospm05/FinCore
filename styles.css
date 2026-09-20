@@ -84,3 +84,66 @@ details summary{cursor:pointer;font-weight:700;color:#bfeaff}
   body{user-select:none;-webkit-tap-highlight-color:transparent}
   input,textarea{user-select:text}
 }
+
+
+/* FinCore v1.2.1 — navegación móvil mejorada */
+.mobile-more-btn{display:none}
+@media(max-width:900px){
+  .sidebar{
+    transition:max-height .22s ease,background .22s ease;
+  }
+  #mainNav{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:4px;
+    overflow:visible;
+    width:100%;
+  }
+  #mainNav .nav-item{
+    display:none;
+    min-width:0;
+    width:100%;
+    justify-content:center;
+    flex-direction:column;
+    gap:2px;
+    padding:8px 3px;
+    text-align:center;
+    font-size:10px;
+    line-height:1.15;
+  }
+  #mainNav .nav-item[data-view="dashboard"],
+  #mainNav .nav-item[data-view="loans"],
+  #mainNav .nav-item[data-view="payments"],
+  #mainNav .nav-item[data-view="calendar"],
+  #mainNav .mobile-more-btn{
+    display:flex;
+  }
+  #mainNav .mobile-more-btn{color:#bfeaff}
+  .sidebar.mobile-expanded{
+    max-height:72vh;
+    overflow:auto;
+    padding:12px;
+    background:linear-gradient(180deg,rgba(5,30,52,.985),rgba(2,15,28,.99));
+    box-shadow:0 -18px 60px rgba(0,0,0,.55),0 0 0 1px rgba(54,193,255,.18);
+  }
+  .sidebar.mobile-expanded #mainNav{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:7px;
+  }
+  .sidebar.mobile-expanded #mainNav .nav-item{
+    display:flex;
+    min-height:58px;
+    border:1px solid rgba(65,190,255,.10);
+    background:rgba(7,32,53,.58);
+  }
+  .sidebar.mobile-expanded #mainNav .nav-item.active{
+    background:linear-gradient(135deg,rgba(20,120,255,.38),rgba(20,210,230,.14));
+  }
+  .sidebar.mobile-expanded #mobileMoreBtn{
+    border-color:rgba(255,157,69,.25);
+    color:#ffd29f;
+  }
+}
+@media(max-width:420px){
+  .sidebar.mobile-expanded #mainNav{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
