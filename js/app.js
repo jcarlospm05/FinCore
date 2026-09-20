@@ -132,7 +132,7 @@
 
   function audit(action, detail){ if(!state.data) return; state.data.audit.unshift({id:uid('aud'),at:nowISO(),action,detail}); state.data.audit=state.data.audit.slice(0,300); }
   function markDirty(action,detail){ state.dirty=true; state.data.updatedAt=nowISO(); if(action) audit(action,detail||''); renderSaveState(); persistLocalData(); }
-  function renderSaveState(){ const el=$('#saveState'); if(!el)return; el.className=`save-state ${state.dirty?'unsaved':'saved'}`; el.textContent=state.dirty?'● Guardando...':'✓ Guardado automáticamente'; }`; el.textContent=state.dirty?'● Cambios sin guardar':'✓ Archivo actualizado'; }
+  function renderSaveState(){ const el=$('#saveState'); if(!el)return; el.className=`save-state ${state.dirty?'unsaved':'saved'}`; el.textContent=state.dirty?'● Guardando...':'✓ Guardado automáticamente'; }
   function toast(msg,type='success'){ const e=document.createElement('div'); e.className=`toast ${type}`; e.textContent=msg; $('#toastContainer').appendChild(e); setTimeout(()=>e.remove(),3300); }
 
   async function openJson(){
@@ -386,5 +386,20 @@
   if(mobileMoreBtn)mobileMoreBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded'))); if(mobileMenuTopBtn)mobileMenuTopBtn.addEventListener('click',()=>setMobileMenu(!mobileSidebar.classList.contains('mobile-expanded')));
   $('#mainNav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b){navigate(b.dataset.view);setMobileMenu(false);}});
   $('#globalSearch').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase(); if(!q)return; const loan=state.data?.loans.find(x=>x.name.toLowerCase().includes(q)); const lender=state.data?.lenders.find(x=>x.name.toLowerCase().includes(q)); if(loan)navigate('loans'); else if(lender)navigate('lenders'); });
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&state.data)persistLocalData();});e.returnValue='';}});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&state.data)persistLocalData();});
+  async function initializeFinCoreLocal(){
+    const saved=await loadLocalData();
+    if(saved){
+      try{
+        state.data=validateData(saved);
+        state.fileName='Guardado local';
+        state.dirty=false;
+        enterApp();
+      }catch(e){
+        await clearLocalData();
+        toast('Los datos locales estaban dañados y se reiniciaron.','error');
+      }
+    }
+  }
+  initializeFinCoreLocal();
 })();
