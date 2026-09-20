@@ -733,6 +733,55 @@
   $('#mainNav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b){navigate(b.dataset.view);setMobileMenu(false);}});
   $('#globalSearch').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase(); if(!q)return; const loan=state.data?.loans.find(x=>x.name.toLowerCase().includes(q)); const lender=state.data?.lenders.find(x=>x.name.toLowerCase().includes(q)); if(loan)navigate('loans'); else if(lender)navigate('lenders'); });
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&state.data)persistLocalData();});
+
+  const TUTORIAL_KEY='fincore-tutorial-complete';
+  const tutorialSlides=[
+    {icon:'👋',title:'Bienvenido a FinCore',text:'Aquí llevas tus deudas, pagos y quincenas de una forma simple.'},
+    {icon:'💳',title:'Agrega tus deudas',text:'Solo indica a quién le debes, cuánto debes y cuánto sueles pagar.'},
+    {icon:'💸',title:'Registra cada pago',text:'Puedes marcar si fue un abono, solo interés o interés más abono.'},
+    {icon:'📅',title:'Mira tu quincena',text:'FinCore te muestra lo que recibes, lo que debes pagar y lo que te queda.'}
+  ];
+  let tutorialIndex=0;
+
+  function tutorialIsComplete(){
+    try{return localStorage.getItem(TUTORIAL_KEY)==='1';}catch(e){return false;}
+  }
+  function setTutorialComplete(){
+    try{localStorage.setItem(TUTORIAL_KEY,'1');}catch(e){}
+  }
+  function renderTutorialSlide(){
+    const slide=tutorialSlides[tutorialIndex];
+    const visual=$('#tutorialVisual'),label=$('#tutorialStepLabel'),title=$('#tutorialTitle'),textEl=$('#tutorialText');
+    const back=$('#tutorialBackBtn'),next=$('#tutorialNextBtn'),dots=$('#tutorialDots');
+    if(visual)visual.textContent=slide.icon;
+    if(label)label.textContent=`Paso ${tutorialIndex+1} de ${tutorialSlides.length}`;
+    if(title)title.textContent=slide.title;
+    if(textEl)textEl.textContent=slide.text;
+    if(back)back.classList.toggle('hidden',tutorialIndex===0);
+    if(next)next.textContent=tutorialIndex===tutorialSlides.length-1?'Comenzar':'Siguiente';
+    if(dots)dots.innerHTML=tutorialSlides.map((_,i)=>`<span class="${i===tutorialIndex?'active':''}"></span>`).join('');
+  }
+  function showFirstRunTutorial(){
+    tutorialIndex=0;
+    $('#welcomeScreen').classList.add('hidden');
+    $('#appShell').classList.add('hidden');
+    $('#onboardingScreen').classList.remove('hidden');
+    renderTutorialSlide();
+  }
+  async function finishTutorial(){
+    setTutorialComplete();
+    $('#onboardingScreen').classList.add('hidden');
+    await initializeFinCoreLocal();
+  }
+
+  const tutorialNextBtn=$('#tutorialNextBtn'), tutorialBackBtn=$('#tutorialBackBtn'), tutorialSkipBtn=$('#tutorialSkipBtn');
+  if(tutorialNextBtn)tutorialNextBtn.addEventListener('click',async()=>{
+    if(tutorialIndex<tutorialSlides.length-1){tutorialIndex++;renderTutorialSlide();return;}
+    await finishTutorial();
+  });
+  if(tutorialBackBtn)tutorialBackBtn.addEventListener('click',()=>{if(tutorialIndex>0){tutorialIndex--;renderTutorialSlide();}});
+  if(tutorialSkipBtn)tutorialSkipBtn.addEventListener('click',finishTutorial);
+
   async function initializeFinCoreLocal(){
     const standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
     const newUserBtn=$('#newUserBtn'), existingBtn=$('#existingUserBtn'), installBtn=$('#installPwaBtn');
@@ -755,6 +804,11 @@
     }
 
     if(installBtn)installBtn.classList.add('hidden');
+    if(!tutorialIsComplete()){
+      showFirstRunTutorial();
+      return;
+    }
+    $('#onboardingScreen').classList.add('hidden');
     const saved=await loadLocalData();
     pendingExistingData=saved||null;
 
