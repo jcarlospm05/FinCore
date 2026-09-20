@@ -1073,3 +1073,41 @@ body{font-family:Inter,Segoe UI,Arial,sans-serif}
   }
   .v2-advanced-nav{display:none!important}
 }
+
+
+/* FinCore v2.0.2 — visible menu close */
+.mobile-menu-close-btn{display:none}
+@media(max-width:700px){
+  .sidebar.mobile-expanded{
+    padding-top:62px!important;
+  }
+  .sidebar.mobile-expanded:before{
+    position:absolute;
+    top:18px;
+    left:20px;
+    padding:0!important;
+    margin:0!important;
+    line-height:38px;
+  }
+  .sidebar.mobile-expanded .mobile-menu-close-btn{
+    display:flex!important;
+    position:absolute;
+    top:14px;
+    right:14px;
+    z-index:5;
+    min-height:42px;
+    padding:8px 13px;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    background:#ffffff;
+    color:#334155;
+    font-size:16px;
+    font-weight:700;
+  }
+  .sidebar.mobile-expanded .mobile-menu-close-btn span{
+    font-size:13px;
+  }
+}
