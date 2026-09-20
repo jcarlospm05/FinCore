@@ -870,3 +870,118 @@ body,.app-shell,.main-area,.view,.welcome-screen{
     background:#ffffff!important;
   }
 }
+
+
+/* FinCore v2.0 — Simple Dominican */
+body{font-family:Inter,Segoe UI,Arial,sans-serif}
+.v2-debt-hero{
+  background:#fff;
+  border:1px solid #dbe3ee;
+  border-left:6px solid #2563eb;
+  border-radius:14px;
+  padding:20px;
+  margin-bottom:10px;
+}
+.v2-debt-hero span{display:block;color:#64748b;font-size:13px;margin-bottom:6px}
+.v2-debt-hero strong{display:block;color:#111827;font-size:34px;line-height:1.05;letter-spacing:-.035em}
+.v2-debt-hero small{display:block;color:#94a3b8;margin-top:7px}
+
+.v2-quincena-card{
+  background:#fffdf5;
+  border:1px solid #f3df9b;
+  border-left:6px solid #f4b400;
+  border-radius:14px;
+  padding:18px;
+  margin-bottom:10px;
+}
+.v2-section-title h3{margin:0;color:#111827;font-size:17px}
+.v2-section-title p{margin:4px 0 0;color:#64748b;font-size:13px}
+.v2-quincena-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+.v2-quincena-grid>div{
+  background:#fff;
+  border:1px solid #eadfb8;
+  border-radius:11px;
+  padding:12px;
+}
+.v2-quincena-grid span{display:block;color:#64748b;font-size:12px;margin-bottom:5px}
+.v2-quincena-grid strong{display:block;color:#111827;font-size:18px}
+.v2-quincena-grid .negative{border-color:#fecaca;background:#fff7f7}
+.v2-quincena-grid .negative strong{color:#b91c1c}
+
+.v2-dashboard-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:10px}
+.v2-chart-panel{grid-column:1/-1}
+.v2-month-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v2-month-grid>div{
+  border:1px solid #e2e8f0;
+  border-radius:11px;
+  padding:14px;
+}
+.v2-month-grid span{display:block;color:#64748b;font-size:12px;margin-bottom:5px}
+.v2-month-grid strong{color:#111827;font-size:20px}
+
+.v2-debt-list{display:grid;gap:9px}
+.v2-debt-card{
+  background:#fff;
+  border:1px solid #dbe3ee;
+  border-radius:13px;
+  padding:15px;
+}
+.v2-debt-card-main{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.v2-debt-card-main>div:first-child{min-width:0}
+.v2-debt-card-main strong{display:block;color:#111827;font-size:16px}
+.v2-debt-card-main small{display:block;color:#64748b;margin-top:4px}
+.v2-debt-balance{text-align:right;flex:0 0 auto}
+.v2-debt-balance span{display:block;color:#64748b;font-size:11px}
+.v2-debt-balance b{display:block;color:#111827;font-size:20px;margin-top:3px}
+.v2-debt-card-foot{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border-top:1px solid #edf2f7;margin-top:13px;padding-top:11px;
+  color:#64748b;font-size:12px;
+}
+.v2-card-actions{margin-left:auto;display:flex;gap:6px}
+.v2-status{
+  display:inline-flex;align-items:center;
+  border-radius:999px;padding:5px 9px;font-weight:700;font-size:11px;
+}
+.v2-status.pagando{background:#eaf2ff;color:#1d4ed8}
+.v2-status.pausada{background:#fff7d6;color:#9a6700}
+.v2-status.saldada{background:#f1f5f9;color:#64748b}
+
+.v2-simple-form{gap:13px}
+.v2-inline-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v2-advanced{
+  border:1px solid #e2e8f0;
+  border-radius:11px;
+  padding:12px;
+  background:#fafafa;
+}
+.v2-advanced summary{cursor:pointer;color:#475569;font-weight:700}
+.v2-advanced-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.optional{font-weight:400;color:#94a3b8}
+
+@media(max-width:700px){
+  .v2-debt-hero{padding:17px 15px}
+  .v2-debt-hero strong{font-size:30px}
+  .v2-quincena-card{padding:14px 12px}
+  .v2-quincena-grid{grid-template-columns:1fr;gap:7px}
+  .v2-quincena-grid>div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px}
+  .v2-quincena-grid span{margin:0}
+  .v2-quincena-grid strong{font-size:17px}
+  .v2-dashboard-grid{grid-template-columns:1fr}
+  .v2-chart-panel{grid-column:auto}
+  .v2-month-grid{grid-template-columns:1fr 1fr}
+  .v2-debt-card-main{display:grid;grid-template-columns:1fr auto}
+  .v2-debt-card-foot{display:grid;grid-template-columns:auto 1fr}
+  .v2-card-actions{grid-column:1/-1;margin-left:0}
+  .v2-card-actions .btn{flex:1}
+  .v2-inline-fields,.v2-advanced-grid{grid-template-columns:1fr}
+}
+@media(max-width:390px){
+  .v2-month-grid{grid-template-columns:1fr}
+  .v2-debt-hero strong{font-size:27px}
+}
