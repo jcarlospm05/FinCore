@@ -1,0 +1,28 @@
+FINCORE v1.2.0 — CAMBIOS
+========================
+
+1. Terminología
+- “Prestamista” fue reemplazado por “Acreedor” en toda la interfaz visible.
+
+2. Intereses configurables por préstamo
+- Tasa de interés en porcentaje.
+- Periodicidad independiente del pago: diaria, quincenal, mensual o anual.
+- Opción “Sin interés”.
+- Fecha “Intereses cubiertos hasta”.
+
+3. Registro de pagos
+- Capital / capital + interés.
+- Solo intereses (no reduce el capital).
+- Cálculo de interés de 1 período.
+- Cálculo acumulado estimado desde la última fecha de intereses cubiertos.
+- Posibilidad de editar manualmente el interés antes de registrar.
+- Opción para marcar intereses cubiertos hasta la fecha del pago.
+
+4. Historial
+- Cada pago guarda su tipo, capital, interés y saldo resultante.
+- Revertir un pago devuelve únicamente el capital amortizado.
+- Si corresponde, restaura la fecha anterior de intereses cubiertos.
+
+5. Compatibilidad
+- JSON v1.0 y v1.1 continúan abriendo en v1.2.
+- Los préstamos antiguos con tasa anual conservan esa interpretación como “Anual”.

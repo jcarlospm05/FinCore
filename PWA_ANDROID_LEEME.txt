@@ -1,0 +1,43 @@
+FINCORE PWA — ANDROID
+=====================
+
+Esta versión conserva FinCore v1.2 y añade instalación como PWA, funcionamiento offline y diseño móvil.
+Tus archivos JSON siguen siendo privados y se leen en el dispositivo. El código de la app no sube el JSON al servidor.
+
+IMPORTANTE
+----------
+Una PWA NO se puede instalar correctamente abriendo index.html con file://.
+Por seguridad, Android/Chrome exige que la app se abra desde HTTPS (o localhost durante pruebas).
+
+PASOS RECOMENDADOS
+------------------
+1. Descomprime este ZIP.
+2. Publica el CONTENIDO de la carpeta FinCore_PWA en un hosting estático HTTPS.
+   Opciones comunes: GitHub Pages, Netlify, Cloudflare Pages o un servidor web propio con HTTPS.
+3. Abre la URL HTTPS desde Chrome en Android.
+4. Si aparece el botón "Instalar FinCore", púlsalo.
+   Si no aparece: menú ⋮ de Chrome > "Instalar aplicación" o "Agregar a pantalla principal".
+5. FinCore quedará con su icono y abrirá a pantalla completa como una app.
+6. En el primer uso, selecciona "Nuevo usuario" o "Abrir JSON existente".
+7. Para llevar datos desde la PC al teléfono, copia el JSON a Descargas/Documentos/Drive/OneDrive y ábrelo desde FinCore.
+8. Al terminar, usa "Guardar JSON" o "Exportar copia". En Android, si el navegador no permite sobrescribir el mismo archivo, descargará un JSON actualizado.
+
+MODO OFFLINE
+------------
+Después de abrir FinCore al menos una vez con internet, la estructura de la app queda almacenada para trabajar sin conexión.
+El archivo JSON del usuario sigue siendo el expediente financiero que se importa/exporta manualmente.
+
+ACTUALIZACIONES
+---------------
+Cuando publiques una versión nueva sustituyendo los archivos del hosting, abre FinCore con internet una vez.
+El service worker actualizará la caché. Si se queda una versión vieja, cierra la app y vuelve a abrirla; en casos extremos borra los datos del sitio y reinstala.
+
+PRIVACIDAD
+----------
+El hosting solo sirve HTML/CSS/JavaScript e imágenes. FinCore procesa el JSON en el navegador.
+No hay backend, base de datos ni API de FinCore en esta versión.
+
+COMPATIBILIDAD
+--------------
+Recomendado: Chrome o Edge recientes en Android.
+La versión de PC puede seguir abriéndose con index.html, aunque la función PWA/offline instalable requiere HTTPS.

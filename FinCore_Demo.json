@@ -1,0 +1,235 @@
+{
+  "app": "FinCore",
+  "schemaVersion": "1.2.0",
+  "createdAt": "2026-09-19T21:44:51",
+  "updatedAt": "2026-09-19T21:44:51",
+  "profile": {
+    "id": "usr_demo",
+    "name": "Usuario Demo",
+    "email": "",
+    "notes": "Archivo de demostración"
+  },
+  "settings": {
+    "currency": "DOP",
+    "currencySymbol": "RD$",
+    "locale": "es-DO",
+    "firstFortnightDay": 15,
+    "secondFortnightRule": "last-day",
+    "projectionYear": 2026,
+    "loanTypes": [
+      "Bancario",
+      "Personal",
+      "Informal",
+      "Tarjeta",
+      "Vehículo",
+      "Hipotecario",
+      "Otro"
+    ],
+    "commitmentCategories": [
+      "Casa",
+      "Servicios",
+      "Alimentación",
+      "Educación",
+      "Transporte",
+      "Seguros",
+      "Familia",
+      "Otros"
+    ],
+    "incomeCategories": [
+      "Salario",
+      "Extra",
+      "Bono",
+      "Negocio",
+      "Otro"
+    ]
+  },
+  "lenders": [
+    {
+      "id": "lend_1",
+      "name": "Banco Ejemplo",
+      "type": "Banco",
+      "phone": "",
+      "email": "",
+      "paymentInfo": "Cuenta de ejemplo",
+      "notes": "",
+      "createdAt": "2026-09-19T21:44:51"
+    },
+    {
+      "id": "lend_2",
+      "name": "Carlos García",
+      "type": "Persona",
+      "phone": "",
+      "email": "",
+      "paymentInfo": "Transferencia",
+      "notes": "",
+      "createdAt": "2026-09-19T21:44:51"
+    }
+  ],
+  "loans": [
+    {
+      "id": "loan_1",
+      "name": "Préstamo vehículo",
+      "lenderId": "lend_1",
+      "type": "Vehículo",
+      "initialAmount": 260000,
+      "currentBalance": 185000,
+      "startDate": "2026-01-15",
+      "interestRate": 1.0,
+      "scheduledAmount": 15000,
+      "frequency": "mensual",
+      "nextPaymentDate": "2026-09-30",
+      "status": "active",
+      "maintenance": true,
+      "notes": "",
+      "createdAt": "2026-09-19T21:44:51",
+      "updatedAt": "2026-09-19T21:44:51",
+      "interestFrequency": "monthly",
+      "interestLastSettledDate": "2026-08-30"
+    },
+    {
+      "id": "loan_2",
+      "name": "Préstamo personal",
+      "lenderId": "lend_2",
+      "type": "Personal",
+      "initialAmount": 90000,
+      "currentBalance": 52000,
+      "startDate": "2026-03-15",
+      "interestRate": 5.0,
+      "scheduledAmount": 8000,
+      "frequency": "quincenal",
+      "nextPaymentDate": "2026-09-30",
+      "status": "active",
+      "maintenance": true,
+      "notes": "",
+      "createdAt": "2026-09-19T21:44:51",
+      "updatedAt": "2026-09-19T21:44:51",
+      "interestFrequency": "monthly",
+      "interestLastSettledDate": "2026-07-30"
+    },
+    {
+      "id": "loan_3",
+      "name": "Deuda bancaria pendiente",
+      "lenderId": "lend_1",
+      "type": "Bancario",
+      "initialAmount": 300000,
+      "currentBalance": 300000,
+      "startDate": "2025-10-01",
+      "interestRate": 0,
+      "scheduledAmount": 0,
+      "frequency": "manual",
+      "nextPaymentDate": "",
+      "status": "active",
+      "maintenance": false,
+      "notes": "Registrada, todavía no incluida en plan de pagos.",
+      "createdAt": "2026-09-19T21:44:51",
+      "updatedAt": "2026-09-19T21:44:51",
+      "interestFrequency": "none",
+      "interestLastSettledDate": ""
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay_1",
+      "loanId": "loan_2",
+      "date": "2026-08-30",
+      "amount": 8000,
+      "principal": 8000,
+      "interest": 0,
+      "previousBalance": 60000,
+      "newBalance": 52000,
+      "note": "Pago de ejemplo",
+      "createdAt": "2026-09-19T21:44:51",
+      "paymentType": "mixed",
+      "previousInterestSettledDate": "",
+      "interestSettledThroughDate": ""
+    },
+    {
+      "id": "pay_2",
+      "loanId": "loan_1",
+      "date": "2026-08-30",
+      "amount": 15000,
+      "principal": 13000,
+      "interest": 2000,
+      "previousBalance": 198000,
+      "newBalance": 185000,
+      "note": "Pago de ejemplo",
+      "createdAt": "2026-09-19T21:44:51",
+      "paymentType": "mixed",
+      "previousInterestSettledDate": "2026-07-30",
+      "interestSettledThroughDate": "2026-08-30"
+    },
+    {
+      "id": "pay_interest_demo",
+      "loanId": "loan_2",
+      "date": "2026-07-30",
+      "paymentType": "interest-only",
+      "amount": 3000,
+      "principal": 0,
+      "interest": 3000,
+      "previousBalance": 60000,
+      "newBalance": 60000,
+      "previousInterestSettledDate": "2026-06-30",
+      "interestSettledThroughDate": "2026-07-30",
+      "note": "Ejemplo: pago solamente de intereses del período",
+      "createdAt": "2026-09-19T21:44:51"
+    }
+  ],
+  "incomes": [
+    {
+      "id": "inc_1",
+      "name": "Salario",
+      "category": "Salario",
+      "amount": 75000,
+      "frequency": "quincenal",
+      "startDate": "2026-01-15",
+      "dayOfMonth": 0,
+      "notes": "",
+      "createdAt": "2026-09-19T21:44:51"
+    }
+  ],
+  "commitments": [
+    {
+      "id": "com_1",
+      "name": "Casa",
+      "category": "Casa",
+      "amount": 10000,
+      "frequency": "quincenal",
+      "startDate": "2026-01-15",
+      "dayOfMonth": 0,
+      "notes": "",
+      "createdAt": "2026-09-19T21:44:51"
+    },
+    {
+      "id": "com_2",
+      "name": "Servicios",
+      "category": "Servicios",
+      "amount": 6500,
+      "frequency": "mensual",
+      "startDate": "2026-01-30",
+      "dayOfMonth": 28,
+      "notes": "",
+      "createdAt": "2026-09-19T21:44:51"
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal_1",
+      "name": "Reducir deuda total a RD$300,000",
+      "type": "debt-total",
+      "loanId": "",
+      "targetValue": 300000,
+      "targetDate": "2027-06-30",
+      "progress": 0,
+      "startValue": 620000,
+      "createdAt": "2026-09-19T21:44:51"
+    }
+  ],
+  "audit": [
+    {
+      "id": "aud_1",
+      "at": "2026-09-19T21:44:51",
+      "action": "Archivo demo creado",
+      "detail": "Datos de ejemplo para probar FinCore"
+    }
+  ]
+}
