@@ -1,4 +1,4 @@
-const FINCORE_PWA_VERSION = '1.5.1';
+const FINCORE_PWA_VERSION = '2.0';
 (() => {
   let deferredPrompt = null;
   const installButtons = [
