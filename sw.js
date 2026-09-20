@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fincore-pwa-v2.0';
+const CACHE_NAME = 'fincore-pwa-v2.0.1';
 const APP_SHELL = [
   './',
   './index.html',
@@ -49,15 +49,14 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then(response => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-        }
-        return response;
-      });
+    fetch(request).then(response => {
+      if (response && response.status === 200 && response.type === 'basic') {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      }
+      return response;
+    }).catch(() => caches.match(request)).then(response => {
+      return response;
     })
   );
 });
